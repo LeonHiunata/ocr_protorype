@@ -1,0 +1,20 @@
+# Byte-compiled / Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment (jika ada)
+venv/
+.venv/
+env/
+
+# Datasets & Output Results (Agar repo tidak berat/berisi data sensitif/sampah)
+Dataset/
+dataset_results.csv
+
+# IDE & Editor files
+.vscode/
+.idea/
+
+# Environment Variables / API Keys (jika nanti menggunakan .env)
+.env

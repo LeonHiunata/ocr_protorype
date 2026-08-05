@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container OCR Vision - File Input</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-gps: #10b981;
+            --accent-gps-hover: #059669;
+            --accent-db: #8b5cf6;
+            --accent-db-hover: #7c3aed;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 3rem auto;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-primary);
+        }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.1s ease, opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-ocr {
+            background: var(--accent-primary);
+            color: white;
+            margin-top: 1rem;
+        }
+        .btn-ocr:hover:not(:disabled) { background: var(--accent-hover); }
+
+        .btn-gps {
+            background: var(--accent-gps);
+            color: white;
+        }
+        .btn-gps:hover:not(:disabled) { background: var(--accent-gps-hover); }
+
+        .btn-db {
+            background: var(--accent-db);
+            color: white;
+        }
+        .btn-db:hover:not(:disabled) { background: var(--accent-db-hover); }
+
+        /* Results Section */
+        .results-section {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .image-preview {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: #000;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .extracted-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .data-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .data-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .data-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .grade-a {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .grade-b {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        /* ─── GPS Panel ──────────────────────────────────── */
+        .gps-panel {
+            margin-top: 0.5rem;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .gps-panel h2 {
+            color: var(--success-color);
+            border-bottom-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .gps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .gps-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .gps-item .data-label {
+            color: var(--accent-gps);
+        }
+
+        .gps-item .data-value {
+            font-size: 1rem;
+        }
+
+        /* Status badge for GPS quality */
+        .rtk-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .rtk-fix    { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
+        .rtk-float  { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .rtk-none   { background: rgba(239,68,68,0.2);  color: #ef4444; border: 1px solid #ef4444; }
+
+        /* ─── Lokasi input ────────────────────────────── */
+        .lokasi-group {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+        .lokasi-input {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(16,185,129,0.35);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 0.65rem 1rem;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .lokasi-input:focus { border-color: var(--accent-gps); }
+        .lokasi-input::placeholder { color: var(--text-muted); letter-spacing: 0; text-transform: none; }
+
+        /* ─── Grid Visualisasi ───────────────────────── */
+        .grid-viz-panel {
+            margin-top: 1rem;
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            background: rgba(0,0,0,0.25);
+        }
+        .grid-viz-panel h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-gps);
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        #gridCanvas2 {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .grid-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+
+        /* ─── Baris Terkirim ─────────────────────────── */
+        .sent-log-panel {
+            margin-top: 1rem;
+            border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            background: rgba(139,92,246,0.04);
+        }
+        .sent-log-panel h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .sent-log-empty {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .sent-log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+        .sent-log-table th {
+            color: var(--text-muted);
+            text-align: left;
+            padding: 0.3rem 0.4rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+        .sent-log-table td {
+            padding: 0.4rem 0.4rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: var(--text-main);
+        }
+        .sent-log-table tr:last-child td { border-bottom: none; }
+        .log-lokasi { color: var(--accent-gps); font-weight: 700; }
+
+        /* GPS Loading Spinner */
+        .gps-loading {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .gps-loading.active { display: flex; }
+
+        .mini-spinner {
+            border: 3px solid rgba(16,185,129,0.2);
+            border-left-color: var(--accent-gps);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        /* DB Panel */
+        .db-panel {
+            margin-top: 0.5rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .db-panel h2 {
+            color: #a78bfa;
+            border-bottom-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .db-success-msg {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+        }
+        .db-success-msg.active { display: flex; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--accent-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Step indicator */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .step-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            transition: background 0.3s;
+        }
+        .step-dot.done  { background: var(--success-color); }
+        .step-dot.active { background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); }
+        .step-line {
+            flex: 1; height: 1px;
+            background: var(--border-color);
+            transition: background 0.3s;
+        }
+        .step-line.done { background: var(--success-color); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 9999;
+        }
+        .toast {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 340px;
+        }
+        .toast.success { background: rgba(16,185,129,0.9); color: white; }
+        .toast.error   { background: rgba(239,68,68,0.9); color: white; }
+        .toast.info    { background: rgba(59,130,246,0.9); color: white; }
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to   { transform: translateX(0); opacity: 1; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <h2>Processing Image with EasyOCR...</h2>
+        <p>Please wait, this may take a moment.</p>
+    </div>
+
+    <header>
+        <h1>Container Vision AI - File Upload</h1>
+        <p class="subtitle">OCR nomor container + rekam koordinat GPS secara terpadu.</p>
+    </header>
+
+    <div class="container">
+        <!-- ─── Upload Panel ───────────────────────────── -->
+        <div class="panel upload-section">
+            <h2>📷 Upload Gambar Container</h2>
+
+            {% if error %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/process" method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="file-upload-wrapper" id="dropzone">
+                    <div class="upload-icon">📁</div>
+                    <h3 id="fileName">Drag &amp; Drop atau Klik untuk Upload</h3>
+                    <p class="upload-text">Supports JPG, JPEG, PNG</p>
+                    <input type="file" name="file" id="fileInput" accept=".jpg,.jpeg,.png" required>
+                </div>
+
+                <input type="hidden" name="tolerance" value="150">
+
+                <button type="submit" class="btn btn-ocr" id="submitBtn">
+                    🔍 Jalankan OCR
+                </button>
+            </form>
+        </div>
+
+        <!-- ─── Results Panel ─────────────────────────── -->
+        {% if image_uri and results %}
+        <div class="panel results-section" id="resultsPanel">
+
+            <!-- Step Indicator -->
+            <div class="step-indicator" id="stepIndicator">
+                <div class="step-dot done" id="step1dot"></div>
+                <span style="font-size:0.75rem; white-space:nowrap;">1. OCR ✓</span>
+                <div class="step-line" id="step12line"></div>
+                <div class="step-dot active" id="step2dot"></div>
+                <span style="font-size:0.75rem; white-space:nowrap;">2. Rekam GPS</span>
+                <div class="step-line" id="step23line"></div>
+                <div class="step-dot" id="step3dot"></div>
+                <span style="font-size:0.75rem; white-space:nowrap;">3. Kirim DB</span>
+            </div>
+
+            <!-- OCR Result -->
+            <h2>📦 Hasil Ekstraksi OCR</h2>
+
+            <div class="image-preview">
+                <img src="{{ image_uri }}" alt="Annotated Container Image">
+            </div>
+
+            <div class="extracted-data">
+                <div class="data-card">
+                    <span class="data-label">Serial Number</span>
+                    <span class="data-value" id="ocrSerial">{{ results.get('Serial Number :', 'N/A') }}</span>
+                </div>
+                <div class="data-card">
+                    <span class="data-label">Check Number</span>
+                    <span class="data-value" id="ocrCheck">{{ results.get('Check Number :', 'N/A') }}</span>
+                </div>
+                <div class="data-card">
+                    <span class="data-label">Nomor Container</span>
+                    <span class="data-value" style="color: var(--accent-primary);" id="ocrNomor">{{ results.get('Nomor Container :', 'N/A') }}</span>
+                </div>
+            </div>
+
+            {% set grade = results.get('Grade', '') %}
+            {% if 'Grade : A' in grade %}
+                <div class="grade-badge grade-a" id="gradeBadge">{{ grade }}</div>
+            {% elif 'Grade : B' in grade %}
+                <div class="grade-badge grade-b" id="gradeBadge">{{ grade }}</div>
+            {% else %}
+                <div class="grade-badge" style="border: 1px solid gray;" id="gradeBadge">{{ grade }}</div>
+            {% endif %}
+
+            <!-- ─── GPS Panel ──────────────────────────── -->
+            <div class="gps-panel" id="gpsPanel">
+                <h2>📍 Koordinat GPS</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Klik tombol di bawah untuk merekam koordinat GPS terkini (~5 detik).
+                </p>
+
+                <!-- GPS Loading -->
+                <div class="gps-loading" id="gpsLoading">
+                    <div class="mini-spinner"></div>
+                    <span>Mengambil data GPS, harap tunggu (~5 detik)...</span>
+                </div>
+
+                <!-- GPS Error -->
+                <div id="gpsError" class="error-message hidden"></div>
+
+                <!-- GPS Result -->
+                <div id="gpsResult" class="hidden">
+                    <div class="gps-grid">
+                        <div class="gps-item">
+                            <div class="data-label">Latitude</div>
+                            <div class="data-value" id="gpsLat">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Longitude</div>
+                            <div class="data-value" id="gpsLon">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Altitude</div>
+                            <div class="data-value" id="gpsAlt">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Waktu (WIB)</div>
+                            <div class="data-value" id="gpsTime" style="font-size:0.85rem;">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Easting (X)</div>
+                            <div class="data-value" id="gpsEasting" style="color:#60a5fa;">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Northing (Y)</div>
+                            <div class="data-value" id="gpsNorthing" style="color:#60a5fa;">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">UTM Zone</div>
+                            <div class="data-value" id="gpsZone" style="color:#c084fc;">—</div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="data-label">Readings</div>
+                            <div class="data-value" id="gpsCount" style="font-size:0.9rem;">—</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <span class="data-label">RTK Status: </span>
+                        <span class="rtk-badge rtk-none" id="rtkBadge">—</span>
+                    </div>
+
+                    <!-- Input Lokasi -->
+                    <div class="lokasi-group">
+                        <label style="font-size:0.85rem; color:var(--accent-gps); font-weight:600;">📌 Lokasi Slot Container</label>
+                        <input type="text" id="inputLokasi" class="lokasi-input"
+                               placeholder="Contoh: B1, C3, A2..."
+                               maxlength="6"
+                               oninput="this.value=this.value.toUpperCase(); updateGridViz2()">
+                        <span style="font-size:0.75rem; color:var(--text-muted);">Format: Huruf (kolom) + Angka (baris) — misal <strong>B1</strong></span>
+                    </div>
+
+                    <!-- Grid Visualisasi -->
+                    <div class="grid-viz-panel">
+                        <h3>🗺️ Mapping Visualisasi Slot</h3>
+                        <canvas id="gridCanvas2" width="500" height="280"></canvas>
+                        <div class="grid-legend">
+                            <span><span class="legend-dot" style="background:#10b981;"></span>Posisi terpilih</span>
+                            <span><span class="legend-dot" style="background:rgba(255,255,255,0.08);"></span>Slot tersedia</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-gps" id="btnRecordGPS">
+                    📡 Record Koordinat GPS
+                </button>
+            </div>
+
+            <!-- ─── Database Panel ──────────────────── -->
+            <div class="db-panel hidden" id="dbPanel">
+                <h2>🗄️ Kirim ke Database</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Data OCR dan GPS siap dikirim. Tekan tombol untuk menyimpan (saat ini mencetak ke console).
+                </p>
+
+                <!-- Preview ringkas -->
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted); font-family: monospace; line-height: 1.8;">
+                    <div><span style="color:#a78bfa">Container :</span> <span id="previewNomor" style="color:var(--text-main)">—</span></div>
+                    <div><span style="color:#a78bfa">Lokasi    :</span> <span id="previewLokasi" style="color:#10b981; font-weight:700;">—</span></div>
+                    <div><span style="color:#a78bfa">Lat / Lon :</span> <span id="previewLatLon" style="color:var(--text-main)">—</span></div>
+                    <div><span style="color:#a78bfa">Easting   :</span> <span id="previewEasting" style="color:#60a5fa;">—</span></div>
+                    <div><span style="color:#a78bfa">Northing  :</span> <span id="previewNorthing" style="color:#60a5fa;">—</span></div>
+                    <div><span style="color:#a78bfa">UTM Zone  :</span> <span id="previewZone" style="color:#c084fc;">—</span></div>
+                    <div><span style="color:#a78bfa">RTK      :</span> <span id="previewRtk" style="color:var(--text-main)">—</span></div>
+                    <div><span style="color:#a78bfa">Waktu    :</span> <span id="previewTime" style="color:var(--text-main)">—</span></div>
+                </div>
+
+                <button class="btn btn-db" id="btnSendDB">
+                    🚀 Send to Database
+                </button>
+
+                <div class="db-success-msg" id="dbSuccessMsg">
+                    ✅ Data berhasil dikirim! (Lihat console/terminal untuk detail)
+                </div>
+
+                <!-- Baris Terkirim -->
+                <div class="sent-log-panel" id="sentLogPanel">
+                    <h3>📋 Riwayat Data Terkirim</h3>
+                    <div class="sent-log-empty" id="sentLogEmpty">Belum ada data yang dikirim.</div>
+                    <table class="sent-log-table hidden" id="sentLogTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Waktu</th>
+                                <th>Container</th>
+                                <th>Lokasi</th>
+                                <th>Easting</th>
+                                <th>Northing</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sentLogBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Hidden data passed from Flask -->
+    {% if results %}
+    <script>
+        const OCR_DATA = {
+            "Serial Number :": {{ results.get('Serial Number :', 'N/A') | tojson }},
+            "Check Number :": {{ results.get('Check Number :', 'N/A') | tojson }},
+            "Nomor Container :": {{ results.get('Nomor Container :', 'N/A') | tojson }},
+            "Grade": {{ results.get('Grade', 'N/A') | tojson }}
+        };
+        const GPS_MODULE_AVAILABLE = {{ 'true' if gps_available else 'false' }};
+    </script>
+    {% endif %}
+
+    <script>
+        // ─── Toast helper ─────────────────────────────
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ─── OCR Form helpers ─────────────────────────
+        const tolSlider = document.getElementById('tolerance');
+        const tolValue  = document.getElementById('tolValue');
+        if (tolSlider) {
+            tolSlider.addEventListener('input', (e) => {
+                tolValue.textContent = e.target.value;
+            });
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    fileNameDisplay.textContent = e.target.files[0].name;
+                    fileNameDisplay.style.color = "var(--accent-primary)";
+                }
+            });
+        }
+
+        const form    = document.getElementById('uploadForm');
+        const overlay = document.getElementById('loadingOverlay');
+        if (form) {
+            form.addEventListener('submit', () => {
+                overlay.style.display = 'flex';
+            });
+        }
+
+        // ─── GPS Logic ────────────────────────────────
+        let gpsData = null; // will hold the GPS response
+
+        const btnRecordGPS = document.getElementById('btnRecordGPS');
+        const gpsLoading   = document.getElementById('gpsLoading');
+        const gpsError     = document.getElementById('gpsError');
+        const gpsResult    = document.getElementById('gpsResult');
+        const dbPanel      = document.getElementById('dbPanel');
+
+        // Step indicator elements
+        const step12line = document.getElementById('step12line');
+        const step23line = document.getElementById('step23line');
+        const step2dot   = document.getElementById('step2dot');
+        const step3dot   = document.getElementById('step3dot');
+
+        if (btnRecordGPS) {
+            btnRecordGPS.addEventListener('click', async () => {
+                if (typeof GPS_MODULE_AVAILABLE !== 'undefined' && !GPS_MODULE_AVAILABLE) {
+                    showToast('GPS module tidak tersedia di server.', 'error');
+                    return;
+                }
+
+                // Reset state
+                btnRecordGPS.disabled = true;
+                btnRecordGPS.innerHTML = '⏳ Mengambil GPS...';
+                gpsLoading.classList.add('active');
+                gpsError.classList.add('hidden');
+                gpsResult.classList.add('hidden');
+                if (dbPanel) dbPanel.classList.add('hidden');
+                gpsData = null;
+
+                try {
+                    const res  = await fetch('/check-location');
+                    const data = await res.json();
+
+                    if (!res.ok || data.error) {
+                        throw new Error(data.error || 'Gagal mendapatkan data GPS.');
+                    }
+
+                    gpsData = data;
+
+                    // Fill GPS result
+                    document.getElementById('gpsLat').textContent      = parseFloat(data.avg_lat).toFixed(8);
+                    document.getElementById('gpsLon').textContent      = parseFloat(data.avg_lon).toFixed(8);
+                    document.getElementById('gpsAlt').textContent      = parseFloat(data.avg_alt).toFixed(2) + ' m';
+                    document.getElementById('gpsTime').textContent     = data.time_wib || '—';
+                    document.getElementById('gpsEasting').textContent  = data.easting  ? data.easting.toLocaleString()  + ' m' : '—';
+                    document.getElementById('gpsNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
+                    document.getElementById('gpsZone').textContent     = data.utm_zone || '—';
+                    document.getElementById('gpsCount').textContent    = `${data.fix_count}/${data.count} fix/readings`;
+
+                    // RTK badge styling
+                    const rtkBadge = document.getElementById('rtkBadge');
+                    rtkBadge.textContent = data.avg_rtk_status || '—';
+                    rtkBadge.className = 'rtk-badge';
+                    const q = data.avg_fix_quality || 0;
+                    if (q === 4)       rtkBadge.classList.add('rtk-fix');
+                    else if (q === 5)  rtkBadge.classList.add('rtk-float');
+                    else               rtkBadge.classList.add('rtk-none');
+
+                    gpsResult.classList.remove('hidden');
+
+                    // Reset lokasi & redraw grid
+                    document.getElementById('inputLokasi').value = '';
+                    updateGridViz2();
+
+                    // Update step indicator
+                    if (step12line) step12line.classList.add('done');
+                    if (step2dot)   { step2dot.classList.remove('active'); step2dot.classList.add('done'); }
+                    if (step3dot)   step3dot.classList.add('active');
+
+                    // Show DB panel with preview
+                    if (dbPanel) {
+                        const nomor = (typeof OCR_DATA !== 'undefined') ? OCR_DATA['Nomor Container :'] : '—';
+                        document.getElementById('previewNomor').textContent    = nomor;
+                        document.getElementById('previewLokasi').textContent   = '— (isi Lokasi dulu)';
+                        document.getElementById('previewLatLon').textContent   = `${parseFloat(data.avg_lat).toFixed(6)}, ${parseFloat(data.avg_lon).toFixed(6)}`;
+                        document.getElementById('previewEasting').textContent  = data.easting  ? data.easting.toLocaleString()  + ' m' : '—';
+                        document.getElementById('previewNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
+                        document.getElementById('previewZone').textContent     = data.utm_zone || '—';
+                        document.getElementById('previewRtk').textContent      = data.avg_rtk_status;
+                        document.getElementById('previewTime').textContent     = data.time_wib;
+                        dbPanel.classList.remove('hidden');
+                    }
+
+                    btnRecordGPS.innerHTML = '🔄 Rekam Ulang GPS';
+                    showToast('Koordinat GPS berhasil direkam!', 'success');
+
+                } catch (err) {
+                    gpsError.textContent = '❌ ' + err.message;
+                    gpsError.classList.remove('hidden');
+                    btnRecordGPS.innerHTML = '📡 Coba Lagi';
+                    showToast('Error GPS: ' + err.message, 'error');
+                } finally {
+                    gpsLoading.classList.remove('active');
+                    btnRecordGPS.disabled = false;
+                }
+            });
+        }
+
+        // ─── Lokasi + Grid ─────────────────────────────────
+        function updateGridViz2() {
+            const lokasi = (document.getElementById('inputLokasi')?.value || '').trim().toUpperCase();
+            const pl = document.getElementById('previewLokasi');
+            if (pl) pl.textContent = lokasi || '— (isi Lokasi dulu)';
+            drawGrid2(lokasi);
+        }
+
+        function drawGrid2(lokasiStr) {
+            const canvas = document.getElementById('gridCanvas2');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const COLS = 10, ROWS = 6;
+            const W = canvas.width, H = canvas.height;
+            const PAD_LEFT = 30, PAD_TOP = 24;
+            const cellW = (W - PAD_LEFT - 6) / COLS;
+            const cellH = (H - PAD_TOP  - 6) / ROWS;
+
+            let selCol = -1, selRow = -1;
+            const m = lokasiStr.match(/^([A-Z]+)(\d+)$/);
+            if (m) {
+                let col = 0;
+                for (let i = 0; i < m[1].length; i++) col = col * 26 + (m[1].charCodeAt(i) - 64);
+                selCol = col - 1;
+                selRow = parseInt(m[2], 10) - 1;
+            }
+
+            ctx.clearRect(0, 0, W, H);
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const x = PAD_LEFT + c * cellW;
+                    const y = PAD_TOP  + r * cellH;
+                    const isSelected = (c === selCol && r === selRow);
+                    const isColHL = (c === selCol && selCol >= 0);
+                    const isRowHL = (r === selRow && selRow >= 0);
+
+                    ctx.fillStyle = isSelected   ? 'rgba(16,185,129,0.85)'
+                                  : (isColHL || isRowHL) ? 'rgba(16,185,129,0.12)'
+                                  : 'rgba(255,255,255,0.06)';
+                    ctx.beginPath();
+                    ctx.roundRect(x+2, y+2, cellW-4, cellH-4, 5);
+                    ctx.fill();
+
+                    ctx.strokeStyle = isSelected ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.08)';
+                    ctx.lineWidth   = isSelected ? 1.5 : 0.5;
+                    ctx.stroke();
+
+                    if (isSelected) {
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(x + cellW/2, y + cellH/2, 5, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            ctx.font = `bold ${Math.floor(cellW * 0.38)}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            for (let c = 0; c < COLS; c++) {
+                ctx.fillStyle = (c === selCol) ? '#10b981' : 'rgba(148,163,184,0.7)';
+                ctx.fillText(String.fromCharCode(65+c), PAD_LEFT + c*cellW + cellW/2, PAD_TOP - 7);
+            }
+            ctx.textAlign = 'right';
+            for (let r = 0; r < ROWS; r++) {
+                ctx.fillStyle = (r === selRow) ? '#10b981' : 'rgba(148,163,184,0.7)';
+                ctx.fillText(String(r+1), PAD_LEFT - 6, PAD_TOP + r*cellH + cellH/2 + 5);
+            }
+        }
+        drawGrid2('');
+
+        // ─── Send to Database ─────────────────────────────────
+        let sentCount2 = 0;
+        const btnSendDB     = document.getElementById('btnSendDB');
+        const dbSuccessMsg  = document.getElementById('dbSuccessMsg');
+
+        if (btnSendDB) {
+            btnSendDB.addEventListener('click', async () => {
+                if (!gpsData) {
+                    showToast('Rekam koordinat GPS terlebih dahulu!', 'error');
+                    return;
+                }
+
+                const lokasi = (document.getElementById('inputLokasi')?.value || '').trim().toUpperCase();
+                if (!lokasi) {
+                    showToast('Isi Lokasi slot container terlebih dahulu!', 'error');
+                    return;
+                }
+
+                btnSendDB.disabled = true;
+                btnSendDB.innerHTML = '⏳ Mengirim...';
+                if (dbSuccessMsg) dbSuccessMsg.classList.remove('active');
+
+                try {
+                    const payload = {
+                        ocr_data: (typeof OCR_DATA !== 'undefined') ? OCR_DATA : {},
+                        gps_data: gpsData,
+                        lokasi: lokasi
+                    };
+
+                    const res  = await fetch('/send-to-database', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok || data.error) {
+                        throw new Error(data.error || 'Gagal mengirim data.');
+                    }
+
+                    // Update step indicator
+                    if (step23line) step23line.classList.add('done');
+                    if (step3dot)   { step3dot.classList.remove('active'); step3dot.classList.add('done'); }
+
+                    if (dbSuccessMsg) dbSuccessMsg.classList.add('active');
+                    btnSendDB.innerHTML = '✅ Terkirim!';
+                    showToast('Data berhasil dikirim ke database (lihat terminal)!', 'success');
+
+                    // Tambahkan ke log baris terkirim
+                    sentCount2++;
+                    const nomor   = (typeof OCR_DATA !== 'undefined') ? (OCR_DATA['Nomor Container :'] || '—') : '—';
+                    const tblBody = document.getElementById('sentLogBody');
+                    const tblEl   = document.getElementById('sentLogTable');
+                    const emptyEl = document.getElementById('sentLogEmpty');
+                    emptyEl.classList.add('hidden');
+                    tblEl.classList.remove('hidden');
+                    const row = tblBody.insertRow(0);
+                    row.innerHTML = `
+                        <td>${sentCount2}</td>
+                        <td style="font-size:0.72rem;">${gpsData.time_wib || new Date().toLocaleTimeString()}</td>
+                        <td>${nomor}</td>
+                        <td class="log-lokasi">${lokasi}</td>
+                        <td style="color:#60a5fa;">${gpsData.easting ? gpsData.easting.toLocaleString() : '—'}</td>
+                        <td style="color:#60a5fa;">${gpsData.northing ? gpsData.northing.toLocaleString() : '—'}</td>
+                    `;
+
+                } catch (err) {
+                    btnSendDB.disabled = false;
+                    btnSendDB.innerHTML = '🚀 Send to Database';
+                    showToast('Error: ' + err.message, 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
