@@ -18,3 +18,5 @@ dataset_results.csv
 
 # Environment Variables / API Keys (jika nanti menggunakan .env)
 .env
+
+apk_deteksi_container/
