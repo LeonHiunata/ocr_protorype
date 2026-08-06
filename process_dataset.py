@@ -31,7 +31,7 @@ def process_dataset(dataset_dir="Dataset", output_csv="dataset_results.csv"):
                 image_bytes = f.read()
                 
             # Process the image. We don't need the annotated image for the CSV
-            _, extracted_data = process_pipeline(image_bytes, x_tolerance=150)
+            _, extracted_data = process_pipeline(image_bytes, x_tolerance=150, crop_half=False)
             
             results.append({
                 "Filename": filename,
