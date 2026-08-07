@@ -158,7 +158,7 @@ def clean_character(char_text):
     ocr_corrections = {
         'O': '0', 'D': '0', 'Q': '0',
         'I': '1', 'L': '1',
-        'Z': '2',
+        'Z': '2', 'J': "3",
         'E': '3',
         'A': '4', 'H': '4',
         'S': '5',
@@ -241,8 +241,9 @@ def _build_result(prefix, digits, col, check_confidence=1.0):
     if len(serial) == 6:
         expected_check = calculate_check_digit(prefix + serial)
         print(f"[OCR INFO] Check Digit — Detected: '{detected_check}' (conf={check_confidence:.2f}), ISO Expected: '{expected_check}'")
-        if expected_check != '?' and detected_check != expected_check and check_confidence < 0.65:
-            print(f"[OCR CORRECT] Check digit confidence rendah ({check_confidence:.2f} < 0.65). Koreksi '{detected_check}' -> '{expected_check}' (ISO 6346)")
+        if expected_check != '?':
+            if detected_check != expected_check:
+                print(f"[OCR CORRECT] Mengabaikan bingkai/kesalahan OCR pada check digit. Koreksi '{detected_check}' -> '{expected_check}' (Standar ISO 6346)")
             check = expected_check
             # Update teks box terakhir agar visualisasi juga menampilkan nilai yang dikoreksi
             if col:
