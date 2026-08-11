@@ -10,7 +10,9 @@ env/
 
 # Datasets & Output Results (Agar repo tidak berat/berisi data sensitif/sampah)
 Dataset/
+Dataset2/
 dataset_results.csv
+dataset2_results.csv
 
 # IDE & Editor files
 .vscode/
