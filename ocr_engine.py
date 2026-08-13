@@ -339,27 +339,7 @@ def draw_visualizations(image, results):
         cv2.putText(annotated, label, (pt1[0], pt1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
     return annotated
 
-def process_pipeline(image_bytes, x_tolerance=50, crop_half=True):
-    """
-    Main OCR pipeline.
-
-    Parameters
-    ----------
-    image_bytes : bytes
-        Raw image bytes to process.
-    x_tolerance : int
-        Pixel tolerance for grouping detected characters into vertical columns.
-    crop_half : bool
-        True  (default) — Real-app / Dataset2 mode.
-                          PASS 1 scans only the RIGHT HALF of the image to find
-                          the first-letter anchor, then crops ±padding around it.
-                          This is the exact original engine logic.
-        False           — Dataset training mode.
-                          PASS 1 scans the FULL image (no half-split) to find
-                          the leftmost first-letter anchor across the entire frame.
-                          All subsequent steps (CLAHE, Pass 2 high-quality OCR,
-                          grouping, ISO check digit, 0/8 heuristic) are identical.
-    """
+def process_pipeline(image_bytes, x_tolerance=50):
     reader = get_reader()
 
     original_img, processed_img = preprocess_image(image_bytes)
@@ -368,36 +348,19 @@ def process_pipeline(image_bytes, x_tolerance=50, crop_half=True):
 
     img_h, img_w = original_img.shape[:2]
 
-    if crop_half:
-        # ── PASS 1 (Real-app / Dataset2): Scan RIGHT HALF only ───────────────
-        # Finds the first-letter anchor in the right half, then adjusts back
-        # to absolute image coordinates. This is the original engine logic.
-        half_w = img_w // 2
-        scan_region = processed_img[:, half_w:]
-        leftmost_x_relative = find_leftmost_column_x(scan_region, reader)
-        print(f"[OCR PASS1] crop_half=True — scanning right half (x>={half_w})")
-
-        if leftmost_x_relative is None:
-            leftmost_x = half_w  # fallback: start of right half
-        else:
-            leftmost_x = leftmost_x_relative + half_w  # absolute coordinate
+    # ── PASS 1: Find the X position of the leftmost detected letter on the RIGHT HALF ──────────
+    half_w = img_w // 2
+    right_half_img = processed_img[:, half_w:]
+    leftmost_x_relative = find_leftmost_column_x(right_half_img, reader)
+    
+    if leftmost_x_relative is None:
+        leftmost_x = 0  # fallback: use full image
     else:
-        # ── PASS 1 (Dataset training): Scan FULL image ───────────────────────
-        # No half-split. Finds the leftmost first-letter anchor on the full
-        # image. Useful when the container number may appear anywhere in frame.
-        leftmost_x_relative = find_leftmost_column_x(processed_img, reader)
-        print(f"[OCR PASS1] crop_half=False — scanning full image (width={img_w})")
+        leftmost_x = leftmost_x_relative + half_w  # Adjust back to absolute original coordinates
 
-        if leftmost_x_relative is None:
-            leftmost_x = 0  # fallback: start of image
-        else:
-            leftmost_x = leftmost_x_relative  # already absolute
-
-    # ── CROP: tight window around the first top-left digit anchor ────────────
-    # 100px to the LEFT  — enough context without left-side noise
-    # 50px  to the RIGHT — tight cut to suppress right-side noise
-    PAD_LEFT  = 100
-    PAD_RIGHT = 50
+    # ── CROP: ±300 px around the leftmost column ─────────────────────────────
+    PAD_LEFT  = 300
+    PAD_RIGHT = 100  # 100px less than left to cut right-side noise
     crop_x1 = max(0, leftmost_x - PAD_LEFT)
     crop_x2 = min(img_w, leftmost_x + PAD_RIGHT)
     print(f"[OCR CROP] x1={crop_x1}  x2={crop_x2}  (image width={img_w})")
