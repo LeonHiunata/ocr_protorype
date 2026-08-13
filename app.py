@@ -3,6 +3,8 @@ import sys
 import os
 import math
 import cv2
+import json
+import time
 import numpy as np
 from flask import Flask, request, render_template, jsonify, Response
 from datetime import datetime, timedelta, timezone
@@ -157,7 +159,7 @@ def process_camera():
 
 
 # ─────────────────────────────────────────────
-# GPS Routes (ported from apk_deteksi_container/server.py)
+# GPS Real-Time Routes
 # ─────────────────────────────────────────────
 
 @app.route('/current-status')
@@ -172,6 +174,153 @@ def current_status():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/live-location')
+def live_location():
+    """Endpoint real-time telemetri posisi rover terkini (lat/lon, UTM, slot, trail)."""
+    if not GPS_AVAILABLE:
+        return jsonify({'error': 'GPS module tidak tersedia.'}), 503
+    try:
+        fix = gps_reader.get_current_fix()
+        lat = fix.get('latitude')
+        lon = fix.get('longitude')
+
+        utm_e, utm_n, utm_zone_str = None, None, None
+        detected_slot, rot_x, rot_y = None, None, None
+
+        if lat is not None and lon is not None:
+            utm_e, utm_n, utm_z, utm_l = latlon_to_utm(float(lat), float(lon))
+            utm_zone_str = f"{utm_z}{utm_l}"
+
+            if COUNTER_AVAILABLE:
+                try:
+                    hasil_counter, rot_x, rot_y = counter.deteksi_blok(float(lon), float(lat))
+                    if hasil_counter:
+                        detected_slot = hasil_counter[2]
+                except Exception:
+                    pass
+
+        time_wib = datetime.now(timezone.utc).astimezone(
+            timezone(timedelta(hours=7))
+        ).strftime('%Y-%m-%d %H:%M:%S WIB')
+
+        trail = gps_reader.get_trail()
+
+        return jsonify({
+            'latitude': lat,
+            'longitude': lon,
+            'altitude': fix.get('altitude', 0.0),
+            'gps_quality': fix.get('gps_quality', 0),
+            'rtk_status': fix.get('rtk_status', 'NO FIX'),
+            'num_sats': fix.get('num_sats', 0),
+            'connected': fix.get('connected', False),
+            'simulation': fix.get('simulation', False),
+            'utc_time': fix.get('utc_time'),
+            'ts': fix.get('ts'),
+            'time_wib': time_wib,
+            'easting': utm_e,
+            'northing': utm_n,
+            'utm_zone': utm_zone_str,
+            'rot_x': rot_x,
+            'rot_y': rot_y,
+            'detected_slot': detected_slot,
+            'trail': trail
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/stream-gps')
+def stream_gps():
+    """Server-Sent Events (SSE) stream untuk update posisi rover secara langsung."""
+    if not GPS_AVAILABLE:
+        return jsonify({'error': 'GPS module tidak tersedia.'}), 503
+
+    def generate_events():
+        while True:
+            try:
+                fix = gps_reader.get_current_fix()
+                lat = fix.get('latitude')
+                lon = fix.get('longitude')
+
+                utm_e, utm_n, utm_zone_str = None, None, None
+                detected_slot, rot_x, rot_y = None, None, None
+
+                if lat is not None and lon is not None:
+                    utm_e, utm_n, utm_z, utm_l = latlon_to_utm(float(lat), float(lon))
+                    utm_zone_str = f"{utm_z}{utm_l}"
+
+                    if COUNTER_AVAILABLE:
+                        try:
+                            hasil_counter, rot_x, rot_y = counter.deteksi_blok(float(lon), float(lat))
+                            if hasil_counter:
+                                detected_slot = hasil_counter[2]
+                        except Exception:
+                            pass
+
+                time_wib = datetime.now(timezone.utc).astimezone(
+                    timezone(timedelta(hours=7))
+                ).strftime('%Y-%m-%d %H:%M:%S WIB')
+
+                data = {
+                    'latitude': lat,
+                    'longitude': lon,
+                    'altitude': fix.get('altitude', 0.0),
+                    'gps_quality': fix.get('gps_quality', 0),
+                    'rtk_status': fix.get('rtk_status', 'NO FIX'),
+                    'num_sats': fix.get('num_sats', 0),
+                    'connected': fix.get('connected', False),
+                    'simulation': fix.get('simulation', False),
+                    'utc_time': fix.get('utc_time'),
+                    'ts': fix.get('ts'),
+                    'time_wib': time_wib,
+                    'easting': utm_e,
+                    'northing': utm_n,
+                    'utm_zone': utm_zone_str,
+                    'rot_x': rot_x,
+                    'rot_y': rot_y,
+                    'detected_slot': detected_slot,
+                    'trail': gps_reader.get_trail()
+                }
+
+                yield f"data: {json.dumps(data)}\n\n"
+                time.sleep(0.3)
+            except Exception as ex:
+                yield f"data: {json.dumps({'error': str(ex)})}\n\n"
+                time.sleep(1.0)
+
+    return Response(generate_events(), mimetype='text/event-stream')
+
+
+@app.route('/toggle-simulation', methods=['POST', 'GET'])
+def toggle_simulation():
+    """Aktifkan / matikan mode simulasi gerak rover."""
+    if not GPS_AVAILABLE:
+        return jsonify({'error': 'GPS module tidak tersedia.'}), 503
+    try:
+        if request.method == 'POST':
+            payload = request.get_json(silent=True) or {}
+            enabled = payload.get('enabled', None)
+            if enabled is None:
+                enabled = not gps_reader.is_simulation_mode()
+        else:
+            state = request.args.get('enabled', '')
+            if state.lower() in ('true', '1', 'yes'):
+                enabled = True
+            elif state.lower() in ('false', '0', 'no'):
+                enabled = False
+            else:
+                enabled = not gps_reader.is_simulation_mode()
+
+        res = gps_reader.set_simulation_mode(enabled)
+        return jsonify({
+            'success': True,
+            'simulation_enabled': res,
+            'message': f"Mode simulasi pergerakan rover {'diaktifkan' if res else 'dimatikan'}."
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/check-location')
 def check_location():
     """
@@ -180,14 +329,53 @@ def check_location():
     if not GPS_AVAILABLE:
         return jsonify({'error': 'GPS module tidak tersedia.'}), 503
     try:
-        duration = 5.0
+        # Jika simulasi aktif atau data langsung sudah ada, langsung berikan live location
+        fix = gps_reader.get_current_fix()
+        if fix.get('simulation') or fix.get('latitude') is not None:
+            lat = fix.get('latitude')
+            lon = fix.get('longitude')
+            if lat is not None and lon is not None:
+                utm_e, utm_n, utm_zone, utm_letter = latlon_to_utm(float(lat), float(lon))
+                detected_slot = None
+                rot_x, rot_y = None, None
+                if COUNTER_AVAILABLE:
+                    try:
+                        hasil_counter, rot_x, rot_y = counter.deteksi_blok(float(lon), float(lat))
+                        if hasil_counter:
+                            detected_slot = hasil_counter[2]
+                    except Exception:
+                        pass
+
+                time_wib = datetime.now(timezone.utc).astimezone(
+                    timezone(timedelta(hours=7))
+                ).strftime('%Y-%m-%d %H:%M:%S WIB')
+
+                return jsonify({
+                    'avg_lon': float(lon),
+                    'avg_lat': float(lat),
+                    'avg_alt': float(fix.get('altitude', 0.0)),
+                    'count': 1,
+                    'fix_count': 1,
+                    'used_fix_data': True,
+                    'avg_fix_quality': int(fix.get('gps_quality', 4)),
+                    'avg_rtk_status': fix.get('rtk_status', 'RTK FIX'),
+                    'time_wib': time_wib,
+                    'easting': utm_e,
+                    'northing': utm_n,
+                    'utm_zone': f"{utm_zone}{utm_letter}",
+                    'rot_x': rot_x,
+                    'rot_y': rot_y,
+                    'detected_slot': detected_slot
+                })
+
+        duration = 3.0
         target_count = None
 
         readings = gps_reader.collect_readings(duration=duration, target_count=target_count)
         if not readings:
             return jsonify({
                 'error': f'Tidak ada data GPS valid dalam {duration} detik. '
-                         f'Pastikan GPS receiver terhubung.'
+                         f'Pastikan GPS receiver terhubung atau aktifkan mode simulasi.'
             }), 500
 
         avg = gps_parsing.average_nmea_data(readings)
@@ -241,7 +429,6 @@ def check_location():
 def send_to_database():
     """
     Placeholder endpoint: menerima data gabungan OCR + GPS dan mencetak ke console.
-    Ganti isi fungsi ini nanti dengan koneksi database yang sesungguhnya.
     """
     try:
         payload = request.get_json(force=True)
@@ -249,7 +436,6 @@ def send_to_database():
         gps_data  = payload.get('gps_data', {})
         lokasi    = payload.get('lokasi', 'N/A')
 
-        # ──── PLACEHOLDER: Print ke console ────────────────────────────────
         print("\n" + "=" * 60)
         print("  SEND TO DATABASE — DATA GABUNGAN OCR + GPS")
         print("=" * 60)
@@ -259,17 +445,16 @@ def send_to_database():
         print(f"  Grade           : {ocr_data.get('Grade', 'N/A')}")
         print(f"  Lokasi Slot     : {lokasi}")
         print("-" * 60)
-        print(f"  Latitude        : {gps_data.get('avg_lat', 'N/A')}")
-        print(f"  Longitude       : {gps_data.get('avg_lon', 'N/A')}")
-        print(f"  Altitude        : {gps_data.get('avg_alt', 'N/A')} m")
+        print(f"  Latitude        : {gps_data.get('avg_lat') or gps_data.get('latitude', 'N/A')}")
+        print(f"  Longitude       : {gps_data.get('avg_lon') or gps_data.get('longitude', 'N/A')}")
+        print(f"  Altitude        : {gps_data.get('avg_alt') or gps_data.get('altitude', 'N/A')} m")
         print(f"  Easting  (UTM)  : {gps_data.get('easting', 'N/A')} m")
         print(f"  Northing (UTM)  : {gps_data.get('northing', 'N/A')} m")
         print(f"  UTM Zone        : {gps_data.get('utm_zone', 'N/A')}")
-        print(f"  RTK Status      : {gps_data.get('avg_rtk_status', 'N/A')}")
-        print(f"  GPS Quality     : {gps_data.get('avg_fix_quality', 'N/A')}")
+        print(f"  RTK Status      : {gps_data.get('avg_rtk_status') or gps_data.get('rtk_status', 'N/A')}")
+        print(f"  GPS Quality     : {gps_data.get('avg_fix_quality') or gps_data.get('gps_quality', 'N/A')}")
         print(f"  Waktu WIB       : {gps_data.get('time_wib', 'N/A')}")
         print("=" * 60 + "\n")
-        # ───────────────────────────────────────────────────────────────────
 
         return jsonify({'success': True, 'message': 'Data dicetak ke console (placeholder).'})
 
@@ -282,7 +467,6 @@ def send_to_database():
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Start background GPS reader thread sebelum server naik
     if GPS_AVAILABLE:
         gps_reader.start()
         print("[GPS] Background GPS reader started.")

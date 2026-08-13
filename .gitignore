@@ -22,3 +22,13 @@ dataset2_results.csv
 .env
 
 apk_deteksi_container/
+
+test_crops/
+
+training_data/
+
+*.pth
+
+train_easyocr.py
+
+prepare_training_data.py

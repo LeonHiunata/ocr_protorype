@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Container OCR Vision</title>
+    <title>Container OCR Vision - Real-Time GPS Tracking Dashboard</title>
     <!-- Proj4js for UTM EPSG:32748 coordinate conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0f172a;
-            --panel-bg: rgba(30, 41, 59, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
+            --bg-color: #020617;
+            --panel-bg: rgba(30, 41, 59, 0.75);
+            --panel-card-bg: rgba(15, 23, 42, 0.6);
+            --border-color: rgba(255, 255, 255, 0.12);
             --accent-primary: #3b82f6;
             --accent-hover: #2563eb;
             --accent-gps: #10b981;
@@ -27,68 +28,102 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Inter', sans-serif;
+        html, body {
+            width: 100%;
+            min-height: 100vh;
             background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
             color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
         }
 
         header {
             width: 100%;
-            padding: 1.75rem 0;
+            padding: 1.25rem 2rem;
             text-align: center;
             border-bottom: 1px solid var(--border-color);
-            background: rgba(2, 6, 23, 0.6);
-            backdrop-filter: blur(10px);
+            background: rgba(2, 6, 23, 0.75);
+            backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         h1 {
-            font-weight: 700;
-            font-size: 2.2rem;
+            font-weight: 800;
+            font-size: 2rem;
             background: linear-gradient(to right, #60a5fa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.5px;
         }
 
-        p.subtitle { color: var(--text-muted); font-size: 1rem; }
+        p.subtitle { color: var(--text-muted); font-size: 0.92rem; font-weight: 400; }
 
+        /* ─── Responsive 2-Column Dashboard Layout ─── */
         .main-layout {
-            width: 92%;
-            max-width: 1300px;
-            margin: 2.5rem auto;
+            width: 96%;
+            max-width: 1450px;
+            margin: 1.5rem auto;
             display: grid;
             grid-template-columns: 420px 1fr;
-            gap: 2rem;
+            gap: 1.75rem;
             align-items: start;
         }
 
-        @media (max-width: 900px) {
-            .main-layout { grid-template-columns: 1fr; }
+        @media (max-width: 980px) {
+            .main-layout { grid-template-columns: 1fr; width: 96%; margin: 1rem auto; }
         }
 
         .panel {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 1.75rem;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            padding: 1.35rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.6);
+            margin-bottom: 1.35rem;
         }
 
         h2 {
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: 700;
             margin-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.6rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 0.5rem;
+        }
+
+        /* ─── Input Mode Tabs ─────────────── */
+        .input-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            background: rgba(0,0,0,0.3);
+            padding: 0.3rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
         }
 
         /* ─── Camera Section ─────────────────────────── */
@@ -99,11 +134,11 @@
             background: #000;
             aspect-ratio: 4/3;
             border: 2px solid var(--border-color);
-            transition: border-color 0.3s;
+            transition: border-color 0.3s ease;
         }
 
-        .camera-wrapper.active { border-color: var(--accent-primary); }
-        .camera-wrapper.captured { border-color: var(--success-color); }
+        .camera-wrapper.active { border-color: var(--accent-primary); box-shadow: 0 0 20px rgba(59, 130, 246, 0.25); }
+        .camera-wrapper.captured { border-color: var(--success-color); box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
 
         #videoFeed, #captureCanvas {
             width: 100%;
@@ -128,7 +163,6 @@
 
         .camera-placeholder .cam-icon { font-size: 3rem; opacity: 0.5; }
 
-        /* Viewfinder overlay (saat kamera aktif) */
         .viewfinder-overlay {
             position: absolute;
             inset: 0;
@@ -147,7 +181,6 @@
         .vf-bl { bottom:12px; left:12px;  border-width: 0 0 2px 2px; }
         .vf-br { bottom:12px; right:12px; border-width: 0 2px 2px 0; }
 
-        /* Live indicator */
         .live-badge {
             position: absolute;
             top: 10px; left: 10px;
@@ -160,7 +193,6 @@
             display: none;
             align-items: center;
             gap: 0.35rem;
-            letter-spacing: 0.5px;
         }
         .live-badge.visible { display: flex; }
         .live-dot {
@@ -174,11 +206,10 @@
             50% { opacity: 0.3; }
         }
 
-        /* Camera selector dropdown */
         select.cam-select {
             width: 100%;
             padding: 0.65rem 0.85rem;
-            border-radius: 8px;
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-main);
             border: 1px solid var(--border-color);
@@ -186,40 +217,58 @@
             outline: none;
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s;
-            margin-top: 1rem;
+            margin-top: 0.75rem;
             margin-bottom: 0.5rem;
         }
-        select.cam-select:focus {
-            border-color: var(--accent-primary);
+        select.cam-select:focus { border-color: var(--accent-primary); }
+        select.cam-select option { background: #1e293b; color: #fff; }
+
+        /* File Upload Box */
+        .file-upload-box {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
         }
-        select.cam-select option {
-            background: #1e293b;
-            color: #fff;
+        .file-upload-box:hover {
+            border-color: var(--accent-primary);
+            background: rgba(59,130,246,0.05);
+        }
+        .file-upload-box input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%; height: 100%;
         }
 
         /* ─── Buttons ─────────────────────────────────── */
         .btn {
             border: none;
-            padding: 0.85rem 1rem;
-            border-radius: 8px;
-            font-size: 0.95rem;
+            padding: 0.8rem 1.1rem;
+            border-radius: 10px;
+            font-size: 0.92rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.25s ease, transform 0.1s ease, opacity 0.25s;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.45rem;
+            gap: 0.5rem;
             width: 100%;
         }
-        .btn:active  { transform: scale(0.97); }
+        .btn:active  { transform: scale(0.98); }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
         .btn-row { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
         .btn-row .btn { flex: 1; }
 
-        .btn-cam    { background: var(--accent-primary); color: white; margin-top: 1rem; }
-        .btn-cam:hover:not(:disabled)    { background: var(--accent-hover); }
+        .btn-cam    { background: var(--accent-primary); color: white; margin-top: 0.75rem; }
+        .btn-cam:hover:not(:disabled)    { background: var(--accent-hover); box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
 
         .btn-capture { background: #dc2626; color: white; }
         .btn-capture:hover:not(:disabled) { background: #b91c1c; }
@@ -228,26 +277,37 @@
         .btn-retake:hover:not(:disabled)  { background: rgba(255,255,255,0.14); }
 
         .btn-ocr     { background: var(--accent-primary); color: white; margin-top: 0.75rem; }
-        .btn-ocr:hover:not(:disabled)     { background: var(--accent-hover); }
+        .btn-ocr:hover:not(:disabled)     { background: var(--accent-hover); box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
 
         .btn-gps     { background: var(--accent-gps); color: white; }
-        .btn-gps:hover:not(:disabled)     { background: var(--accent-gps-hover); }
+        .btn-gps:hover:not(:disabled)     { background: var(--accent-gps-hover); box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
 
         .btn-db      { background: var(--accent-db); color: white; }
-        .btn-db:hover:not(:disabled)      { background: var(--accent-db-hover); }
+        .btn-db:hover:not(:disabled)      { background: var(--accent-db-hover); box-shadow: 0 4px 15px rgba(139,92,246,0.3); }
+
+        .btn-live { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; font-size: 0.8rem; padding: 0.45rem 0.75rem; width: auto; border-radius: 8px; }
+        .btn-live:hover { background: rgba(16, 185, 129, 0.3); }
+        .btn-live.paused { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: #f59e0b; }
+
+        .btn-sim { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid #8b5cf6; font-size: 0.8rem; padding: 0.45rem 0.75rem; width: auto; border-radius: 8px; }
+        .btn-sim:hover { background: rgba(139, 92, 246, 0.3); }
+        .btn-sim.active { background: #8b5cf6; color: white; }
+
+        .btn-snap { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid #3b82f6; font-size: 0.8rem; padding: 0.45rem 0.75rem; width: auto; border-radius: 8px; }
+        .btn-snap:hover { background: rgba(59, 130, 246, 0.3); }
 
         /* ─── OCR Loading ─────────────────────────────── */
         .ocr-loading {
             display: none;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.9rem;
+            padding: 0.85rem;
             background: rgba(59,130,246,0.08);
             border: 1px solid rgba(59,130,246,0.2);
-            border-radius: 8px;
+            border-radius: 10px;
             margin-top: 0.75rem;
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
         }
         .ocr-loading.active { display: flex; }
         .mini-spinner {
@@ -261,195 +321,404 @@
         .mini-spinner.green { border-left-color: var(--accent-gps); }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Error message */
         .err-msg {
             background: rgba(239,68,68,0.1);
             color: var(--error-color);
             border: 1px solid rgba(239,68,68,0.3);
             padding: 0.75rem 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.88rem;
             margin-top: 0.75rem;
         }
 
-        /* ─── Results Panel ───────────────────────────── */
+        /* ─── OCR Results Panel & Interactive Zoom Container ───────────── */
         .results-section {
             display: flex;
             flex-direction: column;
-            gap: 1.25rem;
+            gap: 0;
+            width: 100%;
         }
 
-        /* Step indicator */
         .step-indicator {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            background: rgba(0,0,0,0.25);
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
         }
         .step-dot {
-            width: 9px; height: 9px;
+            width: 10px; height: 10px;
             border-radius: 50%;
             background: var(--border-color);
             transition: background 0.4s, box-shadow 0.4s;
             flex-shrink: 0;
         }
         .step-dot.done   { background: var(--success-color); }
-        .step-dot.active { background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); }
-        .step-line { flex: 1; height: 1px; background: var(--border-color); transition: background 0.4s; }
+        .step-dot.active { background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); }
+        .step-line { flex: 1; height: 2px; background: var(--border-color); transition: background 0.4s; }
         .step-line.done  { background: var(--success-color); }
 
-        /* Image preview */
+        /* Zoom Toolbar & Large Canvas Box */
+        .zoom-tools {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: var(--accent-primary);
+        }
+        .zoom-btn.primary {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+        .zoom-btn.primary:hover {
+            background: var(--accent-hover);
+        }
+
         .image-preview {
+            position: relative;
             width: 100%;
-            border-radius: 10px;
+            height: 520px;
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-color);
-            background: #000;
+            background: #050a14;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            user-select: none;
         }
-        .image-preview img { width: 100%; height: auto; display: block; }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.15s cubic-bezier(0.2, 0, 0.13, 1);
+            transform-origin: center center;
+            cursor: zoom-in;
+        }
 
-        /* Data cards */
+        .zoom-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* ─── Fullscreen High-Res Zoom Inspector Modal ─── */
+        .zoom-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .zoom-modal-content {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            width: 95%;
+            max-width: 1250px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+            overflow: hidden;
+        }
+        .zoom-modal-header {
+            padding: 1rem 1.5rem;
+            background: rgba(2, 6, 23, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .zoom-modal-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .zoom-modal-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .modal-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .modal-btn:hover {
+            background: var(--accent-primary);
+        }
+        .modal-btn.close-btn {
+            background: rgba(239,68,68,0.2);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        .modal-btn.close-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .zoom-modal-body {
+            flex: 1;
+            overflow: auto;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .zoom-modal-body img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            transition: transform 0.15s ease-out;
+            transform-origin: center center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            border-radius: 8px;
+        }
+
         .extracted-data {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 0.85rem;
         }
         .data-card {
-            background: rgba(0,0,0,0.3);
+            background: var(--panel-card-bg);
             border: 1px solid var(--border-color);
-            padding: 1.2rem;
-            border-radius: 10px;
+            padding: 0.9rem 1.1rem;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
         .data-label {
-            font-size: 0.78rem;
+            font-size: 0.73rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
+            font-weight: 500;
         }
-        .data-value { font-size: 1.15rem; font-weight: 600; }
+        .data-value { font-size: 1.1rem; font-weight: 700; }
 
         .grade-badge {
             display: inline-block;
-            padding: 0.4rem 1rem;
+            padding: 0.45rem 1.25rem;
             border-radius: 20px;
             font-weight: 700;
             font-size: 0.9rem;
+            margin-top: 1rem;
         }
         .grade-a { background: rgba(16,185,129,0.15); color: var(--success-color); border: 1px solid var(--success-color); }
         .grade-b { background: rgba(245,158,11,0.15);  color: var(--warning-color); border: 1px solid var(--warning-color); }
 
-        /* ─── GPS Panel ───────────────────────────────── */
+        /* ─── GPS Panel & Telemetry Grid ─────────────── */
         .gps-panel {
             border: 1px solid rgba(16,185,129,0.3);
-            border-radius: 14px;
-            padding: 1.4rem;
-            background: rgba(16,185,129,0.04);
+            border-radius: 18px;
+            padding: 1.35rem;
+            background: rgba(16,185,129,0.03);
         }
-        .gps-panel h2 { color: var(--success-color); border-bottom-color: rgba(16,185,129,0.3); }
+        .gps-panel h2 { color: var(--success-color); border-bottom-color: rgba(16,185,129,0.25); }
+
+        .gps-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .live-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.18);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        .live-status-pill .pulse-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #10b981;
+            animation: pulse 1s infinite;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.18);
+            color: #60a5fa;
+            border: 1px solid #3b82f6;
+        }
+        .mode-badge.sim {
+            background: rgba(139, 92, 246, 0.18);
+            color: #c084fc;
+            border-color: #8b5cf6;
+        }
 
         .gps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
             gap: 0.7rem;
             margin: 0.85rem 0;
         }
         .gps-item {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(16,185,129,0.15);
-            padding: 0.85rem;
-            border-radius: 8px;
+            background: var(--panel-card-bg);
+            border: 1px solid rgba(16,185,129,0.18);
+            padding: 0.75rem 0.85rem;
+            border-radius: 10px;
         }
-        .gps-item .data-label { color: var(--accent-gps); }
-        .gps-item .data-value { font-size: 0.92rem; }
+        .gps-item .data-label { color: var(--accent-gps); font-size: 0.7rem; }
+        .gps-item .data-value { font-size: 0.92rem; font-weight: 700; }
 
         .rtk-badge {
             display: inline-block;
-            padding: 0.2rem 0.7rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.78rem;
-            font-weight: 600;
+            font-weight: 700;
         }
         .rtk-fix   { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
         .rtk-float { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
         .rtk-none  { background: rgba(239,68,68,0.2);  color: #ef4444; border: 1px solid #ef4444; }
 
-        /* ─── Lokasi input ────────────────────────────── */
         .lokasi-group {
-            margin-top: 0.75rem;
+            margin-top: 0.85rem;
             display: flex;
             flex-direction: column;
             gap: 0.45rem;
         }
-        .lokasi-input {
-            background: rgba(0,0,0,0.35);
-            border: 1px solid rgba(16,185,129,0.35);
-            color: var(--text-main);
-            border-radius: 8px;
-            padding: 0.6rem 0.9rem;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .lokasi-input:focus { border-color: var(--accent-gps); }
-        .lokasi-input::placeholder { color: var(--text-muted); letter-spacing: 0; text-transform: none; }
 
-        /* ─── Grid Visualisasi ───────────────────────── */
-        .grid-viz-panel {
-            margin-top: 0.75rem;
-            border: 1px solid rgba(16,185,129,0.2);
+        /* Auto Detected Readonly Slot Display Card */
+        .lokasi-auto-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(6, 78, 59, 0.35) 100%);
+            border: 2px solid #10b981;
+            color: #34d399;
+            font-size: 1.25rem;
+            font-weight: 800;
+            padding: 0.8rem 1.2rem;
             border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.22);
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .lokasi-auto-card.outside {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(127, 29, 29, 0.3) 100%);
+            border-color: #ef4444;
+            color: #fca5a5;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .grid-viz-panel {
+            margin-top: 1rem;
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 14px;
             padding: 1rem;
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,0,0,0.35);
+            width: 100%;
         }
         .grid-viz-panel h3 {
-            font-size: 0.85rem;
+            width: 100%;
+            font-size: 0.88rem;
             font-weight: 600;
             color: var(--accent-gps);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
             gap: 0.4rem;
         }
+        
         #gridCanvas {
             display: block;
             width: 100%;
             height: auto;
-            border-radius: 8px;
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #050a14;
         }
+
         .grid-legend {
+            width: 100%;
             display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.72rem;
+            gap: 1.2rem;
+            margin-top: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             flex-wrap: wrap;
+            justify-content: center;
         }
         .legend-dot {
             width: 10px; height: 10px;
             border-radius: 3px;
             display: inline-block;
-            margin-right: 3px;
+            margin-right: 4px;
             vertical-align: middle;
         }
 
-        /* ─── Baris Terkirim ─────────────────────────── */
         .sent-log-panel {
-            margin-top: 0.75rem;
+            margin-top: 1rem;
             border: 1px solid rgba(139,92,246,0.25);
             border-radius: 12px;
-            padding: 1rem 1.1rem;
+            padding: 1rem;
             background: rgba(139,92,246,0.04);
         }
         .sent-log-panel h3 {
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             font-weight: 600;
             color: #a78bfa;
             margin-bottom: 0.6rem;
@@ -465,17 +734,17 @@
         .sent-log-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.75rem;
+            font-size: 0.78rem;
         }
         .sent-log-table th {
             color: var(--text-muted);
             text-align: left;
-            padding: 0.3rem 0.4rem;
+            padding: 0.4rem 0.5rem;
             border-bottom: 1px solid var(--border-color);
-            font-weight: 500;
+            font-weight: 600;
         }
         .sent-log-table td {
-            padding: 0.35rem 0.4rem;
+            padding: 0.45rem 0.5rem;
             border-bottom: 1px solid rgba(255,255,255,0.04);
             color: var(--text-main);
         }
@@ -492,41 +761,40 @@
         }
         .gps-loading-row.active { display: flex; }
 
-        /* ─── DB Panel ────────────────────────────────── */
         .db-panel {
             border: 1px solid rgba(139,92,246,0.3);
-            border-radius: 14px;
-            padding: 1.4rem;
+            border-radius: 18px;
+            padding: 1.35rem;
             background: rgba(139,92,246,0.04);
         }
-        .db-panel h2 { color: #a78bfa; border-bottom-color: rgba(139,92,246,0.3); }
+        .db-panel h2 { color: #a78bfa; border-bottom-color: rgba(139,92,246,0.25); }
 
         .db-preview {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 0.9rem 1rem;
-            margin-bottom: 0.85rem;
-            font-size: 0.82rem;
+            background: rgba(0,0,0,0.35);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
-            font-family: monospace;
-            line-height: 2;
+            font-family: 'Inter', monospace;
+            line-height: 1.9;
+            border: 1px solid var(--border-color);
         }
 
         .db-success-msg {
             display: none;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.65rem 1rem;
-            border-radius: 8px;
-            background: rgba(139,92,246,0.12);
-            border: 1px solid rgba(139,92,246,0.35);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: rgba(139,92,246,0.15);
+            border: 1px solid rgba(139,92,246,0.4);
             color: #c4b5fd;
-            font-size: 0.88rem;
-            margin-top: 0.85rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
         }
         .db-success-msg.active { display: flex; }
 
-        /* ─── Empty state ─────────────────────────────── */
         .empty-results {
             display: flex;
             flex-direction: column;
@@ -537,11 +805,11 @@
             color: var(--text-muted);
             text-align: center;
             border: 2px dashed var(--border-color);
-            border-radius: 14px;
+            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.3);
         }
         .empty-results .empty-icon { font-size: 3.5rem; opacity: 0.4; }
 
-        /* ─── Toast ───────────────────────────────────── */
         .toast-container {
             position: fixed;
             bottom: 2rem; right: 2rem;
@@ -551,17 +819,18 @@
             z-index: 9999;
         }
         .toast {
-            padding: 0.7rem 1.1rem;
-            border-radius: 8px;
-            font-size: 0.87rem;
-            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
             animation: slideIn 0.3s ease;
-            max-width: 320px;
-            backdrop-filter: blur(10px);
+            max-width: 340px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .toast.success { background: rgba(16,185,129,0.92); color: white; }
-        .toast.error   { background: rgba(239,68,68,0.92);  color: white; }
-        .toast.info    { background: rgba(59,130,246,0.92); color: white; }
+        .toast.success { background: rgba(16,185,129,0.95); color: white; }
+        .toast.error   { background: rgba(239,68,68,0.95);  color: white; }
+        .toast.info    { background: rgba(59,130,246,0.95); color: white; }
         @keyframes slideIn {
             from { transform: translateX(110px); opacity: 0; }
             to   { transform: translateX(0);     opacity: 1; }
@@ -574,105 +843,118 @@
 
     <header>
         <h1>Container Vision AI</h1>
-        <p class="subtitle">Ambil foto container → OCR → Rekam GPS → Kirim ke Database</p>
+        <p class="subtitle">Ambil foto container → OCR → Real-Time GPS Tracking → Kirim ke Database</p>
     </header>
 
     <div class="main-layout">
 
-        <!-- ═══ Kolom Kiri — Kamera & Kontrol ═══════════════════ -->
+        <!-- ═══ Kolom Kiri — Input Gambar Container ═══════════════════ -->
         <div>
             <div class="panel">
-                <h2>📷 Kamera</h2>
+                <h2>📷 Input Foto Container</h2>
 
-                <!-- Video / Canvas wrapper -->
-                <div class="camera-wrapper" id="cameraWrapper">
-                    <video id="videoFeed" autoplay playsinline muted></video>
-                    <canvas id="captureCanvas"></canvas>
+                <div class="input-tabs">
+                    <button class="tab-btn active" id="tabCam" onclick="switchInputTab('cam')">📹 Live Kamera</button>
+                    <button class="tab-btn" id="tabFile" onclick="switchInputTab('file')">📁 Upload File Foto</button>
+                </div>
 
-                    <!-- Placeholder saat kamera belum aktif -->
-                    <div class="camera-placeholder" id="camPlaceholder">
-                        <div class="cam-icon">📷</div>
-                        <span>Kamera belum aktif</span>
-                        <span style="font-size:0.78rem;">Tekan "Aktifkan Kamera" di bawah</span>
+                <!-- Section 1: Live Kamera -->
+                <div id="camSection">
+                    <div class="camera-wrapper" id="cameraWrapper">
+                        <video id="videoFeed" autoplay playsinline muted></video>
+                        <canvas id="captureCanvas"></canvas>
+
+                        <div class="camera-placeholder" id="camPlaceholder">
+                            <div class="cam-icon">📷</div>
+                            <span>Kamera belum aktif</span>
+                            <span style="font-size:0.78rem;">Tekan "Aktifkan Kamera" di bawah</span>
+                        </div>
+
+                        <div class="viewfinder-overlay" id="viewfinderOverlay">
+                            <div class="vf-corner vf-tl"></div>
+                            <div class="vf-corner vf-tr"></div>
+                            <div class="vf-corner vf-bl"></div>
+                            <div class="vf-corner vf-br"></div>
+                        </div>
+
+                        <div class="live-badge" id="liveBadge">
+                            <div class="live-dot"></div>LIVE
+                        </div>
                     </div>
 
-                    <!-- Viewfinder sudut -->
-                    <div class="viewfinder-overlay" id="viewfinderOverlay">
-                        <div class="vf-corner vf-tl"></div>
-                        <div class="vf-corner vf-tr"></div>
-                        <div class="vf-corner vf-bl"></div>
-                        <div class="vf-corner vf-br"></div>
-                    </div>
+                    <select id="camSelect" class="cam-select">
+                        <option value="">📷 Kamera Otomatis / Default</option>
+                    </select>
 
-                    <!-- LIVE badge -->
-                    <div class="live-badge" id="liveBadge">
-                        <div class="live-dot"></div>LIVE
+                    <button class="btn btn-cam" id="btnStartCam">📷 Aktifkan Kamera</button>
+
+                    <div class="btn-row hidden" id="captureRow">
+                        <button class="btn btn-capture" id="btnCapture">📸 Ambil Foto</button>
+                        <button class="btn btn-retake  hidden" id="btnRetake">🔄 Ulangi</button>
                     </div>
                 </div>
 
-                <!-- Selector Perangkat Kamera / Webcam -->
-                <select id="camSelect" class="cam-select">
-                    <option value="">Detecting camera devices...</option>
-                </select>
-
-                <!-- Tombol kamera -->
-                <button class="btn btn-cam" id="btnStartCam">📷 Aktifkan Kamera</button>
-
-                <div class="btn-row hidden" id="captureRow">
-                    <button class="btn btn-capture" id="btnCapture">📸 Ambil Foto</button>
-                    <button class="btn btn-retake  hidden" id="btnRetake">🔄 Ulangi</button>
+                <!-- Section 2: Upload File -->
+                <div id="fileSection" class="hidden">
+                    <div class="file-upload-box" id="fileDropzone">
+                        <div style="font-size:2.5rem; margin-bottom:0.5rem; opacity:0.8;">📁</div>
+                        <div id="fileNameText" style="font-weight:600; font-size:0.92rem; color:var(--text-main);">Drag & Drop atau Klik Upload Foto</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.3rem;">Format: JPG, JPEG, PNG</div>
+                        <input type="file" id="fileUploadInput" accept=".jpg,.jpeg,.png">
+                    </div>
                 </div>
 
-
-
-                <!-- Jalankan OCR -->
                 <button class="btn btn-ocr hidden" id="btnRunOCR">🔍 Jalankan OCR</button>
 
-                <!-- OCR Loading -->
                 <div class="ocr-loading" id="ocrLoading">
                     <div class="mini-spinner"></div>
                     <span>Memproses gambar dengan EasyOCR, harap tunggu...</span>
                 </div>
 
-                <!-- OCR Error -->
                 <div id="ocrError" class="err-msg hidden"></div>
             </div>
         </div>
 
-        <!-- ═══ Kolom Kanan — Hasil ══════════════════════════════ -->
+        <!-- ═══ Kolom Kanan — Hasil & GPS Real-Time ════════════════ -->
         <div class="results-section">
 
-            <!-- Placeholder sebelum ada hasil -->
             <div class="empty-results" id="emptyState">
                 <div class="empty-icon">🏗️</div>
-                <p style="font-size:1rem; font-weight:500;">Belum ada hasil OCR</p>
-                <p style="font-size:0.85rem;">Aktifkan kamera, ambil foto container, lalu jalankan OCR.</p>
+                <p style="font-size:1.05rem; font-weight:600; color:var(--text-main);">Belum ada hasil OCR</p>
+                <p style="font-size:0.88rem;">Aktifkan kamera / upload foto container, lalu jalankan OCR.</p>
             </div>
 
-            <!-- Panel Hasil (tersembunyi sampai OCR berhasil) -->
             <div id="resultsGroup" class="hidden">
 
-                <!-- Step Indicator -->
                 <div class="step-indicator">
                     <div class="step-dot" id="step1dot"></div>
-                    <span style="white-space:nowrap">1. OCR</span>
+                    <span style="white-space:nowrap; font-weight:600;">1. OCR</span>
                     <div class="step-line" id="step12line"></div>
                     <div class="step-dot" id="step2dot"></div>
-                    <span style="white-space:nowrap">2. GPS</span>
+                    <span style="white-space:nowrap; font-weight:600;">2. Real-Time GPS</span>
                     <div class="step-line" id="step23line"></div>
                     <div class="step-dot" id="step3dot"></div>
-                    <span style="white-space:nowrap">3. Database</span>
+                    <span style="white-space:nowrap; font-weight:600;">3. Database</span>
                 </div>
 
-                <!-- Hasil OCR -->
+                <!-- Hasil OCR dengan High-Res Interactive Zoom Controls -->
                 <div class="panel">
-                    <h2>📦 Hasil Ekstraksi OCR</h2>
+                    <h2>
+                        <span>📦 Hasil Ekstraksi OCR</span>
+                        <div class="zoom-tools">
+                            <button class="zoom-btn" onclick="zoomImage(0.25)">🔍 +</button>
+                            <button class="zoom-btn" onclick="zoomImage(-0.25)">🔍 -</button>
+                            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
+                            <button class="zoom-btn primary" onclick="openZoomModal()">⛶ Fullscreen Inspector</button>
+                        </div>
+                    </h2>
 
-                    <div class="image-preview">
-                        <img id="annotatedImg" src="" alt="Annotated Container">
+                    <div class="image-preview" id="imagePreviewContainer" onwheel="handleWheelZoom(event)">
+                        <img id="annotatedImg" src="" alt="Annotated Container" onclick="openZoomModal()" title="Klik untuk Fullscreen Zoom Inspector">
+                        <div class="zoom-badge" id="zoomBadge">100% Zoom</div>
                     </div>
 
-                    <div class="extracted-data" style="margin-top:1rem;">
+                    <div class="extracted-data">
                         <div class="data-card">
                             <span class="data-label">Serial Number</span>
                             <span class="data-value" id="ocrSerial">—</span>
@@ -687,24 +969,37 @@
                         </div>
                     </div>
 
-                    <div id="gradeBadge" class="grade-badge" style="margin-top:0.9rem; border:1px solid gray;">—</div>
+                    <div id="gradeBadge" class="grade-badge" style="border:1px solid gray;">—</div>
                 </div>
 
-                <!-- Panel GPS -->
+                <!-- Panel Real-Time GPS Tracking -->
                 <div class="panel gps-panel">
-                    <h2>📍 Koordinat GPS</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.75rem;">
-                        Tekan tombol untuk merekam posisi GPS terkini (~5 detik).
-                    </p>
+                    <h2>
+                        <span>📍 Koordinat GPS (Real-Time Rover)</span>
+                        <span id="liveGpsBadge" class="live-status-pill">
+                            <span class="pulse-dot"></span>LIVE TELEMETRY
+                        </span>
+                    </h2>
+
+                    <div class="gps-top-bar">
+                        <div>
+                            <span id="modeBadge" class="mode-badge">📡 Serial Hardware GPS</span>
+                        </div>
+                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                            <button id="btnToggleLive" class="btn btn-live">⏸️ Pause Live</button>
+                            <button id="btnToggleSim" class="btn btn-sim">🎮 Simulasi Rover</button>
+                            <button id="btnSnapGps" class="btn btn-snap">📌 Snap Posisi Ini</button>
+                        </div>
+                    </div>
 
                     <div class="gps-loading-row" id="gpsLoading">
                         <div class="mini-spinner green"></div>
-                        <span>Mengambil data GPS, harap tunggu...</span>
+                        <span>Menghubungkan ke stream GPS real-time...</span>
                     </div>
 
                     <div id="gpsError" class="err-msg hidden"></div>
 
-                    <div id="gpsResult" class="hidden">
+                    <div id="gpsResult">
                         <div class="gps-grid">
                             <div class="gps-item">
                                 <div class="data-label">Latitude</div>
@@ -735,40 +1030,45 @@
                                 <div class="data-value" id="gpsZone" style="color:#c084fc;">—</div>
                             </div>
                             <div class="gps-item">
-                                <div class="data-label">Readings</div>
+                                <div class="data-label">Satellites</div>
                                 <div class="data-value" id="gpsCount" style="font-size:0.85rem;">—</div>
                             </div>
                         </div>
-                        <div>
-                            <span class="data-label">RTK Status: </span>
-                            <span class="rtk-badge rtk-none" id="rtkBadge">—</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span class="data-label">RTK Status: </span>
+                                <span class="rtk-badge rtk-none" id="rtkBadge">—</span>
+                            </div>
                         </div>
 
-                        <!-- Input Lokasi -->
+                        <!-- Display Auto Detected Slot (Read-Only) -->
                         <div class="lokasi-group">
-                            <label style="font-size:0.8rem; color:var(--accent-gps); font-weight:600;">📌 Lokasi Slot Container</label>
-                            <input type="text" id="inputLokasi" class="lokasi-input"
-                                   placeholder="Contoh: B1, C3, A2..."
-                                   maxlength="6"
-                                   oninput="this.value=this.value.toUpperCase(); updateGridViz()">
-                            <span style="font-size:0.72rem; color:var(--text-muted);">Format: Huruf (kolom) + Angka (baris) — misal <strong>B1</strong></span>
+                            <label style="font-size:0.82rem; color:var(--accent-gps); font-weight:700;">📌 Lokasi Slot Container (100% Auto-Detected GPS)</label>
+                            <div class="lokasi-auto-card" id="autoSlotCard">
+                                <span>📍</span>
+                                <span id="autoSlotDisplay">MENUNGGU SISTER ROVER GPS...</span>
+                            </div>
+                            <!-- Hidden input value for database payload -->
+                            <input type="hidden" id="inputLokasi" value="">
+                            <span style="font-size:0.72rem; color:var(--text-muted);">Slot ter-detect secara otomatis & real-time dari posisi rover saat ini.</span>
                         </div>
 
-                        <!-- Grid Visualisasi Container Yard (Rotasi Vertikal ke Utara - Kolom A & B) -->
+                        <!-- Grid Visualisasi Moving Rover Marker -->
                         <div class="grid-viz-panel">
-                            <h3>🗺️ Mapping Visualisasi Slot (Rotasi Vertikal ke Utara — Kolom A & B)</h3>
-                            <canvas id="gridCanvas" style="width:100%; border-radius:10px; border:1px solid var(--border-color); background:rgba(0,0,0,0.3); display:block;"></canvas>
-                            <div class="grid-legend" style="display:flex; gap:1.2rem; flex-wrap:wrap; margin-top:0.75rem; font-size:0.78rem;">
-                                <span><span class="legend-dot" style="background:#10b981;"></span>Posisi terpilih</span>
+                            <h3>🗺️ Mapping Live Visualisasi Pergerakan Rover Yard (Rotasi 53.83°)</h3>
+                            <canvas id="gridCanvas"></canvas>
+                            <div class="grid-legend">
+                                <span><span class="legend-dot" style="background:#10b981;"></span>Slot aktif (Rover di dalam area slot)</span>
                                 <span><span class="legend-dot" style="background:#f97316;"></span>Slot container</span>
                                 <span><span class="legend-dot" style="background:#eab308;"></span>Border 6 titik survey</span>
-                                <span><span class="legend-dot" style="background:#ef4444;"></span>Titik GPS</span>
+                                <span><span class="legend-dot" style="background:#ef4444;"></span>Rover Marker Moving</span>
+                                <span><span class="legend-dot" style="background:#38bdf8;"></span>Lintasan Pergerakan Rover (Trail)</span>
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-gps" id="btnRecordGPS" style="margin-top:0.85rem;">
-                        📡 Record Koordinat GPS
+                    <button class="btn btn-gps" id="btnRecordGPS" style="margin-top:1rem;">
+                        📡 Snapshot & Lock Posisi GPS
                     </button>
                 </div>
 
@@ -776,7 +1076,7 @@
                 <div class="panel db-panel hidden" id="dbPanel">
                     <h2>🗄️ Kirim ke Database</h2>
                     <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.85rem;">
-                        Data OCR dan GPS siap. Tekan tombol untuk menyimpan (saat ini mencetak ke console/terminal).
+                        Data OCR dan Telemetri Real-Time GPS siap dikirim ke Database.
                     </p>
 
                     <div class="db-preview">
@@ -820,15 +1120,41 @@
         </div><!-- /results-section -->
     </div><!-- /main-layout -->
 
+    <!-- High-Res Zoom Inspector Modal -->
+    <div class="zoom-modal-backdrop hidden" id="zoomModal" onclick="closeZoomModal()">
+        <div class="zoom-modal-content" onclick="event.stopPropagation()">
+            <div class="zoom-modal-header">
+                <h3>🔍 High-Res Fullscreen Inspector OCR Container</h3>
+                <div class="zoom-modal-actions">
+                    <button class="modal-btn" onclick="modalZoom(0.3)">🔍 + Zoom In</button>
+                    <button class="modal-btn" onclick="modalZoom(-0.3)">🔍 - Zoom Out</button>
+                    <button class="modal-btn" onclick="modalResetZoom()">🔄 100% Reset</button>
+                    <button class="modal-btn close-btn" onclick="closeZoomModal()">✖ Tutup</button>
+                </div>
+            </div>
+            <div class="zoom-modal-body" id="modalImgWrapper">
+                <img id="modalAnnotatedImg" src="" alt="Zoomed Container Text">
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
         // ─── State ─────────────────────────────────────────────────
         let stream        = null;   // MediaStream
-        let capturedBlob  = null;   // snapshot Blob
         let capturedB64   = null;   // snapshot base64 string
         let ocrResults    = null;   // hasil dari /process-camera
-        let gpsData       = null;   // hasil dari /check-location
+        let gpsData       = null;   // telemetry GPS terkini
+        let liveTrackingActive = true;
+        let sseSource     = null;
+        let pollTimer     = null;
+        let roverTrailUTM = [];
+        let activeTab     = 'cam';
+
+        // Zoom State
+        let currentScale = 1.0;
+        let modalScale   = 1.8;
 
         // ─── DOM refs ──────────────────────────────────────────────
         const video          = document.getElementById('videoFeed');
@@ -849,12 +1175,101 @@
         const emptyState     = document.getElementById('emptyState');
         const resultsGroup   = document.getElementById('resultsGroup');
 
+        const fileUploadInput = document.getElementById('fileUploadInput');
+        const fileNameText    = document.getElementById('fileNameText');
+
         // Step indicator
         const step1dot  = document.getElementById('step1dot');
         const step2dot  = document.getElementById('step2dot');
         const step3dot  = document.getElementById('step3dot');
         const step12ln  = document.getElementById('step12line');
         const step23ln  = document.getElementById('step23line');
+
+        // ─── Interactive Image Zoom Handlers ────────────────────────
+        function updateZoomImage() {
+            const img = document.getElementById('annotatedImg');
+            const badge = document.getElementById('zoomBadge');
+            if (img) img.style.transform = `scale(${currentScale})`;
+            if (badge) badge.textContent = `${Math.round(currentScale * 100)}% Zoom`;
+        }
+
+        function zoomImage(delta) {
+            currentScale = Math.max(0.75, Math.min(5.0, currentScale + delta));
+            updateZoomImage();
+        }
+
+        function resetZoom() {
+            currentScale = 1.0;
+            updateZoomImage();
+        }
+
+        function handleWheelZoom(e) {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.25 : -0.25;
+            zoomImage(delta);
+        }
+
+        function openZoomModal() {
+            const srcImg = document.getElementById('annotatedImg');
+            const modalImg = document.getElementById('modalAnnotatedImg');
+            const modal = document.getElementById('zoomModal');
+
+            if (srcImg && srcImg.src && srcImg.src !== window.location.href) {
+                modalImg.src = srcImg.src;
+                modalScale = 1.8; // Auto 180% high-contrast zoom
+                updateModalZoom();
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeZoomModal() {
+            document.getElementById('zoomModal').classList.add('hidden');
+        }
+
+        function modalZoom(delta) {
+            modalScale = Math.max(0.5, Math.min(6.0, modalScale + delta));
+            updateModalZoom();
+        }
+
+        function modalResetZoom() {
+            modalScale = 1.0;
+            updateModalZoom();
+        }
+
+        function updateModalZoom() {
+            const img = document.getElementById('modalAnnotatedImg');
+            if (img) img.style.transform = `scale(${modalScale})`;
+        }
+
+        // Tab Switching Function
+        function switchInputTab(tab) {
+            activeTab = tab;
+            document.getElementById('tabCam').className = tab === 'cam' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tabFile').className = tab === 'file' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('camSection').className = tab === 'cam' ? '' : 'hidden';
+            document.getElementById('fileSection').className = tab === 'file' ? '' : 'hidden';
+
+            if (tab === 'file') {
+                btnRunOCR.classList.remove('hidden');
+            } else {
+                if (!capturedB64) btnRunOCR.classList.add('hidden');
+            }
+        }
+
+        // File Input Handler
+        fileUploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                fileNameText.textContent = '📄 ' + file.name;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    capturedB64 = evt.target.result;
+                    btnRunOCR.classList.remove('hidden');
+                    showToast('File foto berhasil dimuat! Tekan "Jalankan OCR".', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
         // ─── Toast helper ───────────────────────────────────────────
         function showToast(msg, type = 'info') {
@@ -874,32 +1289,18 @@
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 const currentVal = camSelect.value;
 
-                camSelect.innerHTML = '';
-                if (videoDevices.length === 0) {
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = 'Tidak ada perangkat kamera terdeteksi';
-                    camSelect.appendChild(opt);
-                    return;
-                }
+                camSelect.innerHTML = '<option value="">📷 Kamera Otomatis / Default</option>';
+                if (videoDevices.length === 0) return;
 
                 videoDevices.forEach((device, idx) => {
                     const opt = document.createElement('option');
                     opt.value = device.deviceId;
-                    opt.textContent = device.label || `Kamera ${idx + 1} (${device.deviceId.slice(0, 8)}...)`;
+                    opt.textContent = device.label || `Kamera ${idx + 1} (${device.deviceId ? device.deviceId.slice(0, 8) : 'Direct'})`;
                     camSelect.appendChild(opt);
                 });
 
                 if (currentVal && videoDevices.some(d => d.deviceId === currentVal)) {
                     camSelect.value = currentVal;
-                } else if (videoDevices.length > 1) {
-                    // Pre-select USB / External Webcam if available
-                    const usbCam = videoDevices.find(d => 
-                        d.label.toLowerCase().includes('usb') || 
-                        d.label.toLowerCase().includes('webcam') || 
-                        d.label.toLowerCase().includes('external')
-                    );
-                    if (usbCam) camSelect.value = usbCam.deviceId;
                 }
             } catch (err) {
                 console.warn('Error loading camera devices:', err);
@@ -918,7 +1319,7 @@
             }
         });
 
-        // ─── Aktivasi / Matikan Kamera ───────────────────────────────
+        // ─── Kamera Handlers ─────────────────────────────────────────
         btnStartCam.addEventListener('click', async () => {
             if (stream) {
                 stopCamera();
@@ -926,24 +1327,20 @@
             }
             try {
                 const selectedDeviceId = camSelect.value;
-                const videoConstraints = selectedDeviceId
-                    ? { deviceId: { exact: selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 960 } }
-                    : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } };
-
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: videoConstraints,
-                        audio: false
-                    });
-                } catch (e) {
-                    // Fallback to default constraints if exact deviceId fails
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: { ideal: 1280 }, height: { ideal: 960 } },
-                        audio: false
-                    });
+                let videoConstraints = { width: { ideal: 1280 }, height: { ideal: 960 } };
+                
+                if (selectedDeviceId && selectedDeviceId.trim() !== "") {
+                    videoConstraints.deviceId = { exact: selectedDeviceId };
+                } else {
+                    videoConstraints.facingMode = { ideal: 'environment' };
                 }
 
-                // Refresh camera labels after permission is granted
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+                } catch (e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+
                 await updateCameraDevices();
                 if (selectedDeviceId) camSelect.value = selectedDeviceId;
 
@@ -965,7 +1362,9 @@
                 ocrError.classList.add('hidden');
 
             } catch (err) {
-                showToast('Tidak bisa mengakses kamera: ' + err.message, 'error');
+                showToast('Gagal membuka kamera: ' + err.message, 'error');
+                ocrError.textContent = '❌ Gagal mengakses kamera: ' + err.message + '. Anda juga dapat mengunggah file foto container melalui tab "Upload File Foto".';
+                ocrError.classList.remove('hidden');
             }
         });
 
@@ -987,16 +1386,12 @@
             capturedB64 = null;
         }
 
-        // ─── Ambil Foto ────────────────────────────────────────────
         btnCapture.addEventListener('click', () => {
             if (!stream) return;
-
-            // Draw current frame to canvas
             canvas.width  = video.videoWidth  || 1280;
             canvas.height = video.videoHeight || 960;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Switch display: canvas visible, video hidden
             video.style.display = 'none';
             canvas.style.display = 'block';
             liveBadge.classList.remove('visible');
@@ -1004,10 +1399,8 @@
             camWrapper.classList.remove('active');
             camWrapper.classList.add('captured');
 
-            // Get base64
             capturedB64 = canvas.toDataURL('image/jpeg', 0.92);
 
-            // Swap buttons
             btnCapture.classList.add('hidden');
             btnRetake.classList.remove('hidden');
             btnRunOCR.classList.remove('hidden');
@@ -1015,7 +1408,6 @@
             showToast('Foto berhasil diambil! Tekan "Jalankan OCR".', 'success');
         });
 
-        // ─── Ulangi (kembali ke live feed) ────────────────────────
         btnRetake.addEventListener('click', () => {
             canvas.style.display = 'none';
             video.style.display = 'block';
@@ -1032,36 +1424,30 @@
 
         // ─── Jalankan OCR ──────────────────────────────────────────
         btnRunOCR.addEventListener('click', async () => {
-            if (!capturedB64) { showToast('Ambil foto terlebih dahulu.', 'error'); return; }
+            if (!capturedB64) { showToast('Ambil atau upload foto terlebih dahulu.', 'error'); return; }
 
             btnRunOCR.disabled = true;
             btnRunOCR.innerHTML = '⏳ Memproses...';
             ocrLoading.classList.add('active');
             ocrError.classList.add('hidden');
 
-            // Reset step indicator
             [step1dot, step2dot, step3dot].forEach(d => { d.className = 'step-dot'; });
             [step12ln, step23ln].forEach(l => { l.className = 'step-line'; });
-            gpsData = null;
             document.getElementById('dbPanel').classList.add('hidden');
 
             try {
                 const res  = await fetch('/process-camera', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: capturedB64,
-                        tolerance: 150
-                    })
+                    body: JSON.stringify({ image: capturedB64, tolerance: 150 })
                 });
                 const data = await res.json();
-
                 if (!res.ok || data.error) throw new Error(data.error || 'OCR gagal.');
 
                 ocrResults = data.results;
 
-                // Fill result panel
                 document.getElementById('annotatedImg').src = data.image_uri;
+                resetZoom(); // Reset zoom state when new image arrives
 
                 const r = data.results;
                 document.getElementById('ocrSerial').textContent = r['Serial Number :'] || '—';
@@ -1076,21 +1462,15 @@
                 else if (grade.includes('Grade : B')) gb.classList.add('grade-b');
                 else gb.style.border = '1px solid gray';
 
-                // Show results, hide empty state
                 emptyState.classList.add('hidden');
                 resultsGroup.classList.remove('hidden');
 
-                // Step 1 done
                 step1dot.classList.add('done');
                 step2dot.classList.add('active');
 
-                // Reset GPS section
-                document.getElementById('gpsError').classList.add('hidden');
-                document.getElementById('gpsResult').classList.add('hidden');
-                document.getElementById('btnRecordGPS').innerHTML = '📡 Record Koordinat GPS';
-                document.getElementById('btnRecordGPS').disabled = false;
+                initRealTimeGpsTracking();
 
-                showToast('OCR selesai!', 'success');
+                showToast('OCR selesai! Telemetri GPS real-time aktif.', 'success');
 
             } catch (err) {
                 ocrError.textContent = '❌ ' + err.message;
@@ -1103,94 +1483,7 @@
             }
         });
 
-        // ─── Record GPS ────────────────────────────────────────────
-        document.getElementById('btnRecordGPS').addEventListener('click', async () => {
-            const btn = document.getElementById('btnRecordGPS');
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Mengambil GPS...';
-            document.getElementById('gpsLoading').classList.add('active');
-            document.getElementById('gpsError').classList.add('hidden');
-            document.getElementById('gpsResult').classList.add('hidden');
-            document.getElementById('dbPanel').classList.add('hidden');
-            gpsData = null;
-
-            try {
-                const res  = await fetch('/check-location');
-                const data = await res.json();
-                if (!res.ok || data.error) throw new Error(data.error || 'GPS gagal.');
-
-                gpsData = data;
-
-                document.getElementById('gpsLat').textContent      = parseFloat(data.avg_lat).toFixed(8);
-                document.getElementById('gpsLon').textContent      = parseFloat(data.avg_lon).toFixed(8);
-                document.getElementById('gpsAlt').textContent      = parseFloat(data.avg_alt).toFixed(2) + ' m';
-                document.getElementById('gpsTime').textContent     = data.time_wib || '—';
-                document.getElementById('gpsEasting').textContent  = data.easting  ? data.easting.toLocaleString()  + ' m' : '—';
-                document.getElementById('gpsNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
-                document.getElementById('gpsZone').textContent     = data.utm_zone || '—';
-                document.getElementById('gpsCount').textContent    = `${data.fix_count}/${data.count} fix/readings`;
-
-                const rtkBadge = document.getElementById('rtkBadge');
-                rtkBadge.textContent = data.avg_rtk_status || '—';
-                rtkBadge.className = 'rtk-badge';
-                const q = data.avg_fix_quality || 0;
-                if (q === 4)      rtkBadge.classList.add('rtk-fix');
-                else if (q === 5) rtkBadge.classList.add('rtk-float');
-                else              rtkBadge.classList.add('rtk-none');
-
-                document.getElementById('gpsResult').classList.remove('hidden');
-
-                // Reset/update lokasi input & redraw grid with UTM projection
-                if (window.proj4 && data.avg_lon != null && data.avg_lat != null) {
-                    try {
-                        const utmCoords = proj4("EPSG:4326", "EPSG:32748", [parseFloat(data.avg_lon), parseFloat(data.avg_lat)]);
-                        window.currentGpsUtm = { easting: utmCoords[0], northing: utmCoords[1] };
-                    } catch (e) {
-                        console.warn('Proj4 error:', e);
-                    }
-                }
-
-                const detectedSlot = drawGrid(document.getElementById('inputLokasi').value);
-                if (detectedSlot) {
-                    document.getElementById('inputLokasi').value = detectedSlot;
-                }
-                updateGridViz();
-
-                // Step 2 done
-                step12ln.classList.add('done');
-                step2dot.classList.remove('active'); step2dot.classList.add('done');
-                step3dot.classList.add('active');
-
-                // Fill DB preview
-                const nomor = ocrResults ? ocrResults['Nomor Container :'] : '—';
-                document.getElementById('previewNomor').textContent    = nomor;
-                document.getElementById('previewLokasi').textContent   = document.getElementById('inputLokasi').value || '— (isi Lokasi dulu)';
-                document.getElementById('previewLatLon').textContent   = `${parseFloat(data.avg_lat).toFixed(6)}, ${parseFloat(data.avg_lon).toFixed(6)}`;
-                document.getElementById('previewEasting').textContent  = data.easting  ? data.easting.toLocaleString()  + ' m' : '—';
-                document.getElementById('previewNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
-                document.getElementById('previewZone').textContent     = data.utm_zone || '—';
-                document.getElementById('previewRtk').textContent      = data.avg_rtk_status;
-                document.getElementById('previewTime').textContent     = data.time_wib;
-                document.getElementById('dbPanel').classList.remove('hidden');
-                document.getElementById('dbSuccessMsg').classList.remove('active');
-                document.getElementById('btnSendDB').disabled = false;
-                document.getElementById('btnSendDB').innerHTML = '🚀 Send to Database';
-
-                btn.innerHTML = '🔄 Rekam Ulang GPS';
-                showToast('Koordinat GPS berhasil direkam!', 'success');
-
-            } catch (err) {
-                document.getElementById('gpsError').textContent = '❌ ' + err.message;
-                document.getElementById('gpsError').classList.remove('hidden');
-                btn.innerHTML = '📡 Coba Lagi';
-                showToast('GPS error: ' + err.message, 'error');
-            } finally {
-                document.getElementById('gpsLoading').classList.remove('active');
-                btn.disabled = false;
-            }
-        });
-
-        // ─── Proj4 & Container Yard Spatial Definitions (6 Survey Points) ───
+        // ─── Proj4 & Container Yard Spatial Definitions ─────────────
         if (window.proj4) {
             proj4.defs("EPSG:32748", "+proj=utm +zone=48 +south +datum=WGS84 +units=m +no_defs");
             proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
@@ -1202,9 +1495,9 @@
         const REF_UTM_X = refUTMCoords[0];
         const REF_UTM_Y = refUTMCoords[1];
 
-        const CONTAINER_LENGTH = 6.0; // meters (X axis - Lebar slot per kolom A & B)
-        const CONTAINER_WIDTH = 3.0;  // meters (Y axis - Tinggi slot per baris 1 s/d 6 ke Utara)
-        const ROTATION_DEG = 53.83;   // Rotasi 53.83° agar polygon & grid tegak lurus ke utara
+        const CONTAINER_LENGTH = 6.0; 
+        const CONTAINER_WIDTH = 3.0;  
+        const ROTATION_DEG = 53.83;   
 
         const boundaryPoints = [
             [106.88178028, -6.11260706], // P1
@@ -1257,7 +1550,6 @@
             for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
                 let xi = vs[i].x, yi = vs[i].y;
                 let xj = vs[j].x, yj = vs[j].y;
-
                 const dxSeg = xj - xi, dySeg = yj - yi;
                 const lenSq = dxSeg * dxSeg + dySeg * dySeg;
                 if (lenSq > 0) {
@@ -1266,9 +1558,7 @@
                     const distSq = (x - nearX) ** 2 + (y - nearY) ** 2;
                     if (distSq <= eps * eps) return true;
                 }
-
-                let intersect = ((yi > y) !== (yj > y))
-                    && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
                 if (intersect) inside = !inside;
             }
             return inside;
@@ -1284,16 +1574,12 @@
             return corners.every(corner => pointInPolygon(corner, poly));
         }
 
-        // ─── Lokasi input → update grid preview ────────────────────
         function updateGridViz() {
-            const lokasi = (document.getElementById('inputLokasi')?.value || '').trim().toUpperCase();
-            const pl = document.getElementById('previewLokasi');
-            if (pl) pl.textContent = lokasi || '— (isi Lokasi dulu)';
-            drawGrid(lokasi);
+            drawGrid();
         }
 
-        // ─── Draw Container Yard Grid Canvas ───────────────────────
-        function drawGrid(selectedSlotStr = '') {
+        // ─── Real-Time Grid Canvas Render ───────────────
+        function drawGrid() {
             const gridCanvas = document.getElementById('gridCanvas');
             if (!gridCanvas) return null;
             const ctx = gridCanvas.getContext('2d');
@@ -1302,7 +1588,7 @@
             if (!polygonData) return null;
             const { polygon, minRx, maxRx, minRy, maxRy } = polygonData;
 
-            const padding = Math.max((maxRx - minRx) * 0.1, (maxRy - minRy) * 0.1, 5);
+            const padding = Math.max((maxRx - minRx) * 0.1, (maxRy - minRy) * 0.1, 4);
             const viewMinX = minRx - padding;
             const viewMaxX = maxRx + padding;
             const viewMinY = minRy - padding;
@@ -1310,11 +1596,15 @@
 
             const viewWidth = viewMaxX - viewMinX;
             const viewHeight = viewMaxY - viewMinY;
+            const aspectRatio = viewHeight / viewWidth;
 
-            const displayWidth = gridCanvas.clientWidth || gridCanvas.parentElement.clientWidth || 400;
-            gridCanvas.width = displayWidth * 2;
-            gridCanvas.height = gridCanvas.width * (viewHeight / viewWidth);
-            gridCanvas.style.height = (displayWidth * (viewHeight / viewWidth)) + "px";
+            const targetWidth = 1200;
+            const targetHeight = Math.round(targetWidth * aspectRatio);
+
+            if (gridCanvas.width !== targetWidth || gridCanvas.height !== targetHeight) {
+                gridCanvas.width = targetWidth;
+                gridCanvas.height = targetHeight;
+            }
 
             const scale = gridCanvas.width / viewWidth;
             const mapX = (x) => (x - viewMinX) * scale;
@@ -1322,16 +1612,16 @@
 
             ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
 
-            // Draw Boundary Polygon (yellow 6 survey points polygon)
+            // Draw Boundary Survey Polygon (Yellow)
             ctx.beginPath();
             ctx.moveTo(mapX(polygon[0].x), mapY(polygon[0].y));
             for (let i = 1; i < polygon.length; i++) {
                 ctx.lineTo(mapX(polygon[i].x), mapY(polygon[i].y));
             }
             ctx.closePath();
-            ctx.fillStyle = "rgba(234, 179, 8, 0.25)";
+            ctx.fillStyle = "rgba(234, 179, 8, 0.16)";
             ctx.fill();
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.strokeStyle = "#eab308";
             ctx.stroke();
 
@@ -1356,7 +1646,7 @@
             const rowOffset = sortedRows.length > 0 ? sortedRows[0] : 0;
 
             let targetRotatedX = null, targetRotatedY = null;
-            if (window.currentGpsUtm) {
+            if (window.currentGpsUtm && window.currentGpsUtm.easting && window.currentGpsUtm.northing) {
                 const localEasting = window.currentGpsUtm.easting - REF_UTM_X;
                 const localNorthing = window.currentGpsUtm.northing - REF_UTM_Y;
                 const angleRad = ROTATION_DEG * (Math.PI / 180);
@@ -1364,9 +1654,9 @@
                 targetRotatedY = localEasting * Math.sin(angleRad) + localNorthing * Math.cos(angleRad);
             }
 
-            const cleanSelected = (selectedSlotStr || '').trim().toUpperCase();
             let autoDetectedSlot = null;
 
+            // Draw Container Grid Cells
             for (let c = 0; c <= numCols; c++) {
                 for (let r = 0; r <= numRows; r++) {
                     const cx = minRx + c * CONTAINER_LENGTH;
@@ -1380,7 +1670,7 @@
                     const rowNumber = (r - rowOffset) + 1;
                     const slotLabel = `${colLetter}${rowNumber}`;
 
-                    const eps = 0.02;
+                    const eps = 0.2;
                     let isTargetCell = false;
                     if (targetRotatedX !== null && targetRotatedY !== null) {
                         if (targetRotatedX >= cx - eps && targetRotatedX <= cx + CONTAINER_LENGTH + eps &&
@@ -1390,8 +1680,6 @@
                         }
                     }
 
-                    const isSelected = (cleanSelected && cleanSelected === slotLabel) || (isTargetCell && !cleanSelected);
-
                     const px = mapX(cx);
                     const py = mapY(cy + CONTAINER_WIDTH);
                     const pWidth = CONTAINER_LENGTH * scale;
@@ -1400,59 +1688,312 @@
                     ctx.beginPath();
                     ctx.rect(px, py, pWidth, pHeight);
 
-                    if (isSelected) {
-                        ctx.fillStyle = "#10b981"; // Green for selected/target slot
-                        ctx.strokeStyle = "#047857";
+                    if (isTargetCell) {
+                        ctx.fillStyle = "#10b981"; 
+                        ctx.strokeStyle = "#34d399";
+                        ctx.lineWidth = 4;
                     } else {
-                        ctx.fillStyle = "#f97316"; // Orange for containers
+                        ctx.fillStyle = "#f97316"; 
                         ctx.strokeStyle = "#c2410c";
+                        ctx.lineWidth = 2.5;
                     }
-                    ctx.lineWidth = 2;
                     ctx.fill();
                     ctx.stroke();
 
-                    // Inner circle
+                    // Perfect Circle Badge
+                    const circleRadius = Math.min(pWidth, pHeight) * 0.40;
                     ctx.beginPath();
-                    ctx.arc(px + pWidth / 2, py + pHeight / 2, Math.min(pWidth, pHeight) * 0.35, 0, Math.PI * 2);
-                    ctx.fillStyle = isSelected ? "#34d399" : "#fb923c";
+                    ctx.arc(px + pWidth / 2, py + pHeight / 2, circleRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = isTargetCell ? "#059669" : "rgba(255, 255, 255, 0.22)";
                     ctx.fill();
+                    ctx.strokeStyle = isTargetCell ? "#34d399" : "rgba(255, 255, 255, 0.6)";
+                    ctx.lineWidth = isTargetCell ? 3 : 1.5;
+                    ctx.stroke();
 
-                    // Label text inside cell
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = `bold ${Math.max(12, Math.floor(pHeight * 0.35))}px Inter, sans-serif`;
+                    // Large, Bold, High-Contrast Slot Number
+                    const fontSize = Math.max(22, Math.floor(pHeight * 0.45));
+                    ctx.font = `900 ${fontSize}px 'Inter', sans-serif`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
+
+                    ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
+                    ctx.lineWidth = 5;
+                    ctx.strokeText(slotLabel, px + pWidth / 2, py + pHeight / 2);
+
+                    ctx.fillStyle = "#ffffff";
                     ctx.fillText(slotLabel, px + pWidth / 2, py + pHeight / 2);
                 }
             }
 
-            // Draw GPS Point marker if available
+            // Draw Movement Trail (Cyan line connecting historical rover points)
+            if (roverTrailUTM && roverTrailUTM.length > 1) {
+                const angleRad = ROTATION_DEG * (Math.PI / 180);
+                ctx.beginPath();
+                let first = true;
+                roverTrailUTM.forEach(pt => {
+                    if (!pt || !pt.easting || !pt.northing) return;
+                    const dx = pt.easting - REF_UTM_X;
+                    const dy = pt.northing - REF_UTM_Y;
+                    const rx = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+                    const ry = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
+                    const tX = mapX(rx);
+                    const tY = mapY(ry);
+
+                    if (first) { ctx.moveTo(tX, tY); first = false; }
+                    else { ctx.lineTo(tX, tY); }
+                });
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
+                ctx.lineWidth = 5;
+                ctx.setLineDash([8, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Draw Dynamic Moving Rover Marker with Pulsating Beacon Ring
             if (targetRotatedX !== null && targetRotatedY !== null) {
                 const px = mapX(targetRotatedX);
                 const py = mapY(targetRotatedY);
 
+                const timeSec = Date.now() / 250.0;
+                const pulseR = Math.max(16, gridCanvas.width * 0.024) + Math.sin(timeSec) * 4;
+
+                // Pulsating aura
                 ctx.beginPath();
-                ctx.arc(px, py, Math.max(8, gridCanvas.width * 0.012), 0, Math.PI * 2);
+                ctx.arc(px, py, pulseR, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
+                ctx.fill();
+
+                // Core red dot
+                ctx.beginPath();
+                ctx.arc(px, py, Math.max(10, gridCanvas.width * 0.014), 0, Math.PI * 2);
                 ctx.fillStyle = "#ef4444";
                 ctx.fill();
                 ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 3;
                 ctx.stroke();
+
+                // Label tag "ROVER 📍"
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `bold ${Math.max(12, Math.floor(gridCanvas.width * 0.017))}px Inter, sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillText("ROVER 📍", px, py - pulseR - 4);
+            }
+
+            // Update 100% Auto-Detected Slot Card
+            const autoCard = document.getElementById('autoSlotCard');
+            const autoText = document.getElementById('autoSlotDisplay');
+            const hiddenInput = document.getElementById('inputLokasi');
+            const previewLokasi = document.getElementById('previewLokasi');
+
+            if (autoDetectedSlot) {
+                if (autoText) autoText.textContent = "SLOT " + autoDetectedSlot;
+                if (autoCard) autoCard.className = "lokasi-auto-card";
+                if (hiddenInput) hiddenInput.value = autoDetectedSlot;
+                if (previewLokasi) previewLokasi.textContent = autoDetectedSlot;
+            } else {
+                if (autoText) autoText.textContent = "DI LUAR SLOT CONTAINER";
+                if (autoCard) autoCard.className = "lokasi-auto-card outside";
+                if (hiddenInput) hiddenInput.value = "DI LUAR SLOT";
+                if (previewLokasi) previewLokasi.textContent = "DI LUAR SLOT";
             }
 
             return autoDetectedSlot;
         }
 
-        // Initial draw on page load
-        window.addEventListener('load', () => { drawGrid(''); });
+        // Continuous Animation Render Loop
+        function animateCanvasLoop() {
+            updateGridViz();
+            requestAnimationFrame(animateCanvasLoop);
+        }
+
+        window.addEventListener('load', () => {
+            drawGrid();
+            requestAnimationFrame(animateCanvasLoop);
+        });
+
+        // ─── Real-Time Telemetry Data Handler ───────────────────────
+        function handleTelemetryUpdate(data) {
+            if (!data || data.error) return;
+
+            if (data.latitude != null && data.longitude != null) {
+                document.getElementById('gpsLat').textContent      = parseFloat(data.latitude).toFixed(8);
+                document.getElementById('gpsLon').textContent      = parseFloat(data.longitude).toFixed(8);
+                document.getElementById('gpsAlt').textContent      = (parseFloat(data.altitude) || 0).toFixed(2) + ' m';
+                document.getElementById('gpsTime').textContent     = data.time_wib || '—';
+                document.getElementById('gpsEasting').textContent  = data.easting  ? data.easting.toLocaleString()  + ' m' : '—';
+                document.getElementById('gpsNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
+                document.getElementById('gpsZone').textContent     = data.utm_zone || '—';
+                document.getElementById('gpsCount').textContent    = data.simulation ? 'SIMULATED' : `${data.num_sats || 0} Sats`;
+
+                const rtkBadge = document.getElementById('rtkBadge');
+                rtkBadge.textContent = data.rtk_status || '—';
+                rtkBadge.className = 'rtk-badge';
+                const q = data.gps_quality || 0;
+                if (q === 4)      rtkBadge.classList.add('rtk-fix');
+                else if (q === 5) rtkBadge.classList.add('rtk-float');
+                else              rtkBadge.classList.add('rtk-none');
+
+                const mb = document.getElementById('modeBadge');
+                const btnSim = document.getElementById('btnToggleSim');
+                if (data.simulation) {
+                    mb.textContent = '🎮 Simulasi Rover Active';
+                    mb.className = 'mode-badge sim';
+                    btnSim.classList.add('active');
+                } else {
+                    mb.textContent = '📡 Serial Hardware GPS';
+                    mb.className = 'mode-badge';
+                    btnSim.classList.remove('active');
+                }
+
+                if (data.easting && data.northing) {
+                    window.currentGpsUtm = { easting: data.easting, northing: data.northing };
+                }
+
+                // Process trail history
+                if (data.trail && data.trail.length > 0 && window.proj4) {
+                    roverTrailUTM = data.trail.map(t => {
+                        try {
+                            const utm = proj4("EPSG:4326", "EPSG:32748", [t.lon, t.lat]);
+                            return { easting: utm[0], northing: utm[1] };
+                        } catch (e) { return null; }
+                    }).filter(Boolean);
+                } else if (data.easting && data.northing) {
+                    roverTrailUTM.push({ easting: data.easting, northing: data.northing });
+                    if (roverTrailUTM.length > 100) roverTrailUTM.shift();
+                }
+
+                gpsData = {
+                    avg_lat: data.latitude,
+                    avg_lon: data.longitude,
+                    avg_alt: data.altitude,
+                    easting: data.easting,
+                    northing: data.northing,
+                    utm_zone: data.utm_zone,
+                    avg_rtk_status: data.rtk_status,
+                    time_wib: data.time_wib
+                };
+
+                updateDbPreview();
+            }
+        }
+
+        function updateDbPreview() {
+            if (!gpsData) return;
+            const nomor = ocrResults ? (ocrResults['Nomor Container :'] || '—') : '—';
+            const autoSlot = document.getElementById('inputLokasi')?.value || '—';
+            document.getElementById('previewNomor').textContent    = nomor;
+            document.getElementById('previewLokasi').textContent   = autoSlot;
+            document.getElementById('previewLatLon').textContent   = `${parseFloat(gpsData.avg_lat).toFixed(6)}, ${parseFloat(gpsData.avg_lon).toFixed(6)}`;
+            document.getElementById('previewEasting').textContent  = gpsData.easting  ? gpsData.easting.toLocaleString()  + ' m' : '—';
+            document.getElementById('previewNorthing').textContent = gpsData.northing ? gpsData.northing.toLocaleString() + ' m' : '—';
+            document.getElementById('previewZone').textContent     = gpsData.utm_zone || '—';
+            document.getElementById('previewRtk').textContent      = gpsData.avg_rtk_status || '—';
+            document.getElementById('previewTime').textContent     = gpsData.time_wib || '—';
+            
+            step12ln.classList.add('done');
+            step2dot.classList.remove('active'); step2dot.classList.add('done');
+            step3dot.classList.add('active');
+            document.getElementById('dbPanel').classList.remove('hidden');
+        }
+
+        // ─── Real-Time Tracking Core ────────────────────────────────
+        function initRealTimeGpsTracking() {
+            if (sseSource) { sseSource.close(); sseSource = null; }
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+
+            const liveBadge = document.getElementById('liveGpsBadge');
+
+            if (!liveTrackingActive) {
+                liveBadge.style.opacity = '0.5';
+                liveBadge.querySelector('.pulse-dot').style.animation = 'none';
+                return;
+            }
+
+            liveBadge.style.opacity = '1';
+            liveBadge.querySelector('.pulse-dot').style.animation = 'pulse 1s infinite';
+
+            if (window.EventSource) {
+                sseSource = new EventSource('/stream-gps');
+                sseSource.onmessage = (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        handleTelemetryUpdate(data);
+                    } catch (err) { console.warn('SSE JSON parse error:', err); }
+                };
+                sseSource.onerror = (err) => {
+                    console.warn('SSE Connection error, fallback to fast polling.');
+                    if (sseSource) { sseSource.close(); sseSource = null; }
+                    startPollingFallback();
+                };
+            } else {
+                startPollingFallback();
+            }
+        }
+
+        function startPollingFallback() {
+            if (pollTimer) return;
+            pollTimer = setInterval(async () => {
+                if (!liveTrackingActive) return;
+                try {
+                    const res = await fetch('/live-location');
+                    const data = await res.json();
+                    handleTelemetryUpdate(data);
+                } catch (e) { console.warn('Live location polling failed:', e); }
+            }, 400);
+        }
+
+        // Real-time button toggles
+        document.getElementById('btnToggleLive').addEventListener('click', () => {
+            liveTrackingActive = !liveTrackingActive;
+            const btn = document.getElementById('btnToggleLive');
+            if (liveTrackingActive) {
+                btn.textContent = '⏸️ Pause Live';
+                btn.classList.remove('paused');
+                initRealTimeGpsTracking();
+                showToast('Tracking Real-Time diaktifkan.', 'info');
+            } else {
+                btn.textContent = '▶️ Start Live';
+                btn.classList.add('paused');
+                initRealTimeGpsTracking();
+                showToast('Tracking Real-Time di-pause.', 'info');
+            }
+        });
+
+        document.getElementById('btnToggleSim').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/toggle-simulation', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                }
+            } catch (err) {
+                showToast('Gagal mengubah mode simulasi: ' + err.message, 'error');
+            }
+        });
+
+        document.getElementById('btnSnapGps').addEventListener('click', () => {
+            updateDbPreview();
+            showToast('Posisi live GPS telah dikunci ke form Database!', 'success');
+        });
+
+        document.getElementById('btnRecordGPS').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/live-location');
+                const data = await res.json();
+                handleTelemetryUpdate(data);
+                showToast('Snapshot koordinat GPS berhasil dikunci!', 'success');
+            } catch (err) {
+                showToast('Gagal merekam GPS: ' + err.message, 'error');
+            }
+        });
 
         // ─── Send to Database ──────────────────────────────────────
         let sentCount = 0;
         document.getElementById('btnSendDB').addEventListener('click', async () => {
-            if (!gpsData) { showToast('Rekam GPS terlebih dahulu!', 'error'); return; }
+            if (!gpsData) { showToast('Telemetri GPS belum tersedia!', 'error'); return; }
 
-            const lokasi = (document.getElementById('inputLokasi')?.value || '').trim().toUpperCase();
-            if (!lokasi) { showToast('Isi Lokasi slot container terlebih dahulu!', 'error'); return; }
+            const lokasi = (document.getElementById('inputLokasi')?.value || 'DI LUAR SLOT').trim().toUpperCase();
 
             const btn = document.getElementById('btnSendDB');
             btn.disabled = true;
@@ -1472,14 +2013,12 @@
                 const data = await res.json();
                 if (!res.ok || data.error) throw new Error(data.error || 'Gagal mengirim.');
 
-                // Step 3 done
                 step23ln.classList.add('done');
                 step3dot.classList.remove('active'); step3dot.classList.add('done');
                 document.getElementById('dbSuccessMsg').classList.add('active');
                 btn.innerHTML = '✅ Terkirim!';
-                showToast('Data berhasil dikirim! (lihat terminal)', 'success');
+                showToast('Data berhasil dikirim ke database (console)!', 'success');
 
-                // Tambahkan ke log baris terkirim
                 sentCount++;
                 const nomor   = ocrResults ? (ocrResults['Nomor Container :'] || '—') : '—';
                 const tblBody = document.getElementById('sentLogBody');
