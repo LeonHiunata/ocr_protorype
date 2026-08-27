@@ -19,6 +19,7 @@ def clean_character(char_text):
         'B': '8',
         'P': '9', 'q': '9',
     }
+
     if len(char_text) == 1 and char_text in ocr_corrections:
         corrected = ocr_corrections[char_text]
         return corrected

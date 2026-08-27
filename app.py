@@ -435,11 +435,13 @@ def send_to_database():
         ocr_data  = payload.get('ocr_data', {})
         gps_data  = payload.get('gps_data', {})
         lokasi    = payload.get('lokasi', 'N/A')
+        tipe_container = payload.get('tipe_container', 'N/A')
 
         print("\n" + "=" * 60)
         print("  SEND TO DATABASE — DATA GABUNGAN OCR + GPS")
         print("=" * 60)
         print(f"  Nomor Container : {ocr_data.get('Nomor Container :', 'N/A')}")
+        print(f"  Tipe Container  : {tipe_container}")
         print(f"  Serial Number   : {ocr_data.get('Serial Number :', 'N/A')}")
         print(f"  Check Number    : {ocr_data.get('Check Number :', 'N/A')}")
         print(f"  Grade           : {ocr_data.get('Grade', 'N/A')}")
