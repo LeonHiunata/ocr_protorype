@@ -1,31 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Container OCR Vision - Real-Time GPS Tracking Dashboard</title>
-    <!-- Proj4js for UTM EPSG:32748 coordinate conversion -->
+    <title>Container OCR Vision & GPS Tracker</title>
+    <!-- Proj4js for UTM EPSG:32748 spatial conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --bg-color: #020617;
-            --panel-bg: rgba(30, 41, 59, 0.75);
-            --panel-card-bg: rgba(15, 23, 42, 0.6);
-            --border-color: rgba(255, 255, 255, 0.12);
-            --accent-primary: #3b82f6;
-            --accent-hover: #2563eb;
-            --accent-gps: #10b981;
-            --accent-gps-hover: #059669;
-            --accent-db: #8b5cf6;
-            --accent-db-hover: #7c3aed;
+            --bg-color: #0b0f19;
+            --card-bg: rgba(21, 30, 49, 0.7);
+            --card-solid: #151e31;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(59, 130, 246, 0.5);
+            
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: rgba(59, 130, 246, 0.15);
+            
+            --success: #10b981;
+            --success-hover: #059669;
+            --success-light: rgba(16, 185, 129, 0.15);
+            
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
+            --text-dim: #64748b;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -34,1935 +48,1177 @@
             padding: 0;
         }
 
-        html,
         body {
             width: 100%;
             min-height: 100vh;
-            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%);
             color: var(--text-main);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow-x: hidden;
+            line-height: 1.5;
+            padding-bottom: 3rem;
         }
 
+        /* ─── Header ─── */
         header {
             width: 100%;
-            padding: 1.25rem 2rem;
-            text-align: center;
+            padding: 1.1rem 2rem;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
-            background: rgba(2, 6, 23, 0.75);
-            backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
             z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        h1 {
-            font-weight: 800;
-            font-size: 2rem;
-            background: linear-gradient(to right, #60a5fa, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.25rem;
-            letter-spacing: -0.5px;
-        }
-
-        p.subtitle {
-            color: var(--text-muted);
-            font-size: 0.92rem;
-            font-weight: 400;
-        }
-
-        /* ─── Responsive 2-Column Dashboard Layout ─── */
-        .main-layout {
-            width: 96%;
-            max-width: 1450px;
-            margin: 1.5rem auto;
-            display: grid;
-            grid-template-columns: 420px 1fr;
-            gap: 1.75rem;
-            align-items: start;
-        }
-
-        @media (max-width: 980px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-                width: 96%;
-                margin: 1rem auto;
-            }
-        }
-
-        .panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.35rem;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
-            margin-bottom: 1.35rem;
-        }
-
-        h2 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.6rem;
+        .brand {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
-        /* ─── Input Mode Tabs ─────────────── */
-        .input-tabs {
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--primary), var(--purple));
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.3rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 0.5rem;
-            font-size: 0.82rem;
-            font-weight: 600;
-            border: none;
-            background: transparent;
+        .brand-text h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
             color: var(--text-muted);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
         }
 
-        .tab-btn.active {
-            background: var(--accent-primary);
-            color: white;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
         }
 
-        /* ─── Camera Section ─────────────────────────── */
-        .camera-wrapper {
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        /* ─── Main Container ─── */
+        .app-container {
+            max-width: 1050px;
+            margin: 1.75rem auto;
+            padding: 0 1.25rem;
+        }
+
+        /* ─── Stepper Progress Bar ─── */
+        .stepper-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-            aspect-ratio: 4/3;
-            border: 2px solid var(--border-color);
-            transition: border-color 0.3s ease;
         }
 
-        .camera-wrapper.active {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
-        }
-
-        .camera-wrapper.captured {
-            border-color: var(--success-color);
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
-        }
-
-        #videoFeed,
-        #captureCanvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        #captureCanvas {
-            display: none;
-        }
-
-        .camera-placeholder {
-            position: absolute;
-            inset: 0;
+        .step-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .camera-placeholder .cam-icon {
-            font-size: 3rem;
-            opacity: 0.5;
-        }
-
-        .viewfinder-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            display: none;
-        }
-
-        .viewfinder-overlay.visible {
-            display: block;
-        }
-
-        .vf-corner {
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-color: rgba(59, 130, 246, 0.8);
-            border-style: solid;
-        }
-
-        .vf-tl {
-            top: 12px;
-            left: 12px;
-            border-width: 2px 0 0 2px;
-        }
-
-        .vf-tr {
-            top: 12px;
-            right: 12px;
-            border-width: 2px 2px 0 0;
-        }
-
-        .vf-bl {
-            bottom: 12px;
-            left: 12px;
-            border-width: 0 0 2px 2px;
-        }
-
-        .vf-br {
-            bottom: 12px;
-            right: 12px;
-            border-width: 0 2px 2px 0;
-        }
-
-        .live-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(239, 68, 68, 0.85);
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            display: none;
-            align-items: center;
-            gap: 0.35rem;
-        }
-
-        .live-badge.visible {
-            display: flex;
-        }
-
-        .live-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: white;
-            animation: pulse 1.2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        select.cam-select {
-            width: 100%;
-            padding: 0.65rem 0.85rem;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            font-size: 0.85rem;
-            outline: none;
+            gap: 0.4rem;
             cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
-            margin-top: 0.75rem;
-            margin-bottom: 0.5rem;
+            z-index: 2;
+            transition: var(--transition);
+            width: 18%;
+            text-align: center;
         }
 
-        select.cam-select:focus {
-            border-color: var(--accent-primary);
+        .step-bubble {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: var(--transition);
         }
 
-        select.cam-select option {
-            background: #1e293b;
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        /* Stepper States */
+        .step-item.active .step-bubble {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+            transform: scale(1.1);
+        }
+        .step-item.active .step-label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .step-item.completed .step-bubble {
+            background: var(--success);
+            border-color: var(--success);
             color: #fff;
         }
-
-        /* File Upload Box */
-        .file-upload-box {
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
+        .step-item.completed .step-label {
+            color: var(--success);
         }
 
-        .file-upload-box:hover {
-            border-color: var(--accent-primary);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .file-upload-box input[type="file"] {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* ─── Buttons ─────────────────────────────────── */
-        .btn {
-            border: none;
-            padding: 0.8rem 1.1rem;
-            border-radius: 10px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn:disabled {
+        .step-item.locked {
             opacity: 0.45;
             cursor: not-allowed;
         }
 
-        .btn-row {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-
-        .btn-row .btn {
-            flex: 1;
-        }
-
-        .btn-cam {
-            background: var(--accent-primary);
-            color: white;
-            margin-top: 0.75rem;
-        }
-
-        .btn-cam:hover:not(:disabled) {
-            background: var(--accent-hover);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-capture {
-            background: #dc2626;
-            color: white;
-        }
-
-        .btn-capture:hover:not(:disabled) {
-            background: #b91c1c;
-        }
-
-        .btn-retake {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-retake:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.14);
-        }
-
-        .btn-ocr {
-            background: var(--accent-primary);
-            color: white;
-            margin-top: 0.75rem;
-        }
-
-        .btn-ocr:hover:not(:disabled) {
-            background: var(--accent-hover);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-gps {
-            background: var(--accent-gps);
-            color: white;
-        }
-
-        .btn-gps:hover:not(:disabled) {
-            background: var(--accent-gps-hover);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-db {
-            background: var(--accent-db);
-            color: white;
-        }
-
-        .btn-db:hover:not(:disabled) {
-            background: var(--accent-db-hover);
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-live {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1px solid #10b981;
-            font-size: 0.8rem;
-            padding: 0.45rem 0.75rem;
-            width: auto;
-            border-radius: 8px;
-        }
-
-        .btn-live:hover {
-            background: rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-live.paused {
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-            border-color: #f59e0b;
-        }
-
-        .btn-sim {
-            background: rgba(139, 92, 246, 0.15);
-            color: #c084fc;
-            border: 1px solid #8b5cf6;
-            font-size: 0.8rem;
-            padding: 0.45rem 0.75rem;
-            width: auto;
-            border-radius: 8px;
-        }
-
-        .btn-sim:hover {
-            background: rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-sim.active {
-            background: #8b5cf6;
-            color: white;
-        }
-
-        .btn-snap {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-            border: 1px solid #3b82f6;
-            font-size: 0.8rem;
-            padding: 0.45rem 0.75rem;
-            width: auto;
-            border-radius: 8px;
-        }
-
-        .btn-snap:hover {
-            background: rgba(59, 130, 246, 0.3);
-        }
-
-        /* ─── OCR Loading ─────────────────────────────── */
-        .ocr-loading {
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.85rem;
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 10px;
-            margin-top: 0.75rem;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-        }
-
-        .ocr-loading.active {
-            display: flex;
-        }
-
-        .mini-spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-left-color: var(--accent-primary);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 0.8s linear infinite;
-            flex-shrink: 0;
-        }
-
-        .mini-spinner.green {
-            border-left-color: var(--accent-gps);
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .err-msg {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error-color);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            margin-top: 0.75rem;
-        }
-
-        /* ─── OCR Results Panel & Interactive Zoom Container ───────────── */
-        .results-section {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            width: 100%;
-        }
-
-        .step-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 1.25rem;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 0.75rem 1.25rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .step-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--border-color);
-            transition: background 0.4s, box-shadow 0.4s;
-            flex-shrink: 0;
-        }
-
-        .step-dot.done {
-            background: var(--success-color);
-        }
-
-        .step-dot.active {
-            background: var(--accent-primary);
-            box-shadow: 0 0 10px var(--accent-primary);
-        }
-
-        .step-line {
-            flex: 1;
-            height: 2px;
-            background: var(--border-color);
-            transition: background 0.4s;
-        }
-
-        .step-line.done {
-            background: var(--success-color);
-        }
-
-        /* Zoom Toolbar & Large Canvas Box */
-        .zoom-tools {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-
-        .zoom-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.35rem 0.65rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .zoom-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: var(--accent-primary);
-        }
-
-        .zoom-btn.primary {
-            background: var(--accent-primary);
-            color: white;
-            border-color: var(--accent-primary);
-        }
-
-        .zoom-btn.primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .image-preview {
-            position: relative;
-            width: 100%;
-            height: 520px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            background: #050a14;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1rem;
-            user-select: none;
-        }
-
-        .image-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            display: block;
-            transition: transform 0.15s cubic-bezier(0.2, 0, 0.13, 1);
-            transform-origin: center center;
-            cursor: zoom-in;
-        }
-
-        .zoom-badge {
+        /* Stepper Connector Lines */
+        .stepper-track {
             position: absolute;
-            bottom: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.78);
-            backdrop-filter: blur(8px);
-            color: #60a5fa;
-            border: 1px solid rgba(96, 165, 250, 0.35);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.3rem 0.75rem;
-            border-radius: 20px;
-            pointer-events: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            top: 29px;
+            left: 8%;
+            right: 8%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            z-index: 1;
+        }
+        .stepper-progress {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--success));
+            width: 0%;
+            transition: width 0.35s ease-in-out;
         }
 
-        /* ─── Fullscreen High-Res Zoom Inspector Modal ─── */
-        .zoom-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(2, 6, 23, 0.9);
+        /* ─── Card & Step Sections ─── */
+        .step-content {
+            display: none;
+            background: var(--card-bg);
             backdrop-filter: blur(12px);
-            z-index: 10000;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            margin-bottom: 1.75rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .step-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .step-header p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* ─── Buttons & Controls ─── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.4rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover:not(:disabled) {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none !important;
+        }
+
+        .actions-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* ─── Step 1: Size Cards ─── */
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .size-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .size-card:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .size-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .size-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
+            font-size: 1.8rem;
+            color: var(--primary);
         }
 
-        .zoom-modal-content {
-            background: #0f172a;
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            width: 95%;
-            max-width: 1250px;
-            height: 90vh;
+        .size-card.selected .size-icon {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .size-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .size-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .size-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .size-card.selected .size-badge {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* ─── Step 2: Camera & OCR ─── */
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.35rem;
+            border-radius: var(--radius-md);
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .media-input-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            min-height: 260px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
-            overflow: hidden;
-        }
-
-        .zoom-modal-header {
-            padding: 1rem 1.5rem;
-            background: rgba(2, 6, 23, 0.85);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 1rem;
         }
 
-        .zoom-modal-header h3 {
-            font-size: 1.05rem;
+        .video-preview {
+            width: 100%;
+            max-height: 360px;
+            border-radius: var(--radius-sm);
+            object-fit: contain;
+            background: #000;
+        }
+
+        .upload-dropzone {
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .upload-dropzone i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .ocr-preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .ocr-preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ocr-img-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+        }
+
+        .ocr-img-card img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+        }
+
+        .ocr-results-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+        }
+
+        .ocr-field-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .ocr-field-row:last-child {
+            border-bottom: none;
+        }
+
+        .field-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .field-val {
+            font-size: 0.95rem;
             font-weight: 700;
+            font-family: monospace;
             color: var(--text-main);
         }
 
-        .zoom-modal-actions {
-            display: flex;
-            gap: 0.5rem;
+        .grade-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .grade-badge.a { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success); }
+        .grade-badge.b { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning); }
+        .grade-badge.c { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--danger); }
+
+        /* ─── Step 3: GPS Telemetry ─── */
+        .gps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 1.25rem 0;
         }
 
-        .modal-btn {
-            background: rgba(255, 255, 255, 0.08);
+        .gps-card {
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
-            color: white;
-            padding: 0.45rem 0.85rem;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
         }
 
-        .modal-btn:hover {
-            background: var(--accent-primary);
-        }
-
-        .modal-btn.close-btn {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        .modal-btn.close-btn:hover {
-            background: #ef4444;
-            color: white;
-        }
-
-        .zoom-modal-body {
-            flex: 1;
-            overflow: auto;
-            background: #020617;
+        .gps-card-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.35rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
+            gap: 0.4rem;
         }
 
-        .zoom-modal-body img {
-            max-width: 95%;
-            max-height: 95%;
-            object-fit: contain;
-            transition: transform 0.15s ease-out;
-            transform-origin: center center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            border-radius: 8px;
-        }
-
-        .extracted-data {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.85rem;
-        }
-
-        .data-card {
-            background: var(--panel-card-bg);
-            border: 1px solid var(--border-color);
-            padding: 0.9rem 1.1rem;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
-
-        .data-label {
-            font-size: 0.73rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .data-value {
-            font-size: 1.1rem;
+        .gps-card-val {
+            font-size: 1.15rem;
             font-weight: 700;
+            font-family: monospace;
+            color: var(--text-main);
         }
 
-        .grade-badge {
-            display: inline-block;
-            padding: 0.45rem 1.25rem;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-        }
-
-        .grade-a {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success-color);
-            border: 1px solid var(--success-color);
-        }
-
-        .grade-b {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning-color);
-            border: 1px solid var(--warning-color);
-        }
-
-        /* ─── GPS Panel & Telemetry Grid ─────────────── */
-        .gps-panel {
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 18px;
-            padding: 1.35rem;
-            background: rgba(16, 185, 129, 0.03);
-        }
-
-        .gps-panel h2 {
-            color: var(--success-color);
-            border-bottom-color: rgba(16, 185, 129, 0.25);
-        }
-
-        .gps-top-bar {
+        .gps-slot-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            margin-bottom: 0.85rem;
         }
 
-        .live-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            background: rgba(16, 185, 129, 0.18);
-            color: #10b981;
-            border: 1px solid #10b981;
-        }
-
-        .live-status-pill .pulse-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #10b981;
-            animation: pulse 1s infinite;
-        }
-
-        .mode-badge {
-            display: inline-block;
-            padding: 0.25rem 0.7rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: rgba(59, 130, 246, 0.18);
-            color: #60a5fa;
-            border: 1px solid #3b82f6;
-        }
-
-        .mode-badge.sim {
-            background: rgba(139, 92, 246, 0.18);
-            color: #c084fc;
-            border-color: #8b5cf6;
-        }
-
-        .gps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-            gap: 0.7rem;
-            margin: 0.85rem 0;
-        }
-
-        .gps-item {
-            background: var(--panel-card-bg);
-            border: 1px solid rgba(16, 185, 129, 0.18);
-            padding: 0.75rem 0.85rem;
-            border-radius: 10px;
-        }
-
-        .gps-item .data-label {
-            color: var(--accent-gps);
-            font-size: 0.7rem;
-        }
-
-        .gps-item .data-value {
-            font-size: 0.92rem;
-            font-weight: 700;
-        }
-
-        .rtk-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        .rtk-fix {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border: 1px solid #10b981;
-        }
-
-        .rtk-float {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            border: 1px solid #f59e0b;
-        }
-
-        .rtk-none {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-        }
-
-        .lokasi-group {
-            margin-top: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem;
-        }
-
-        /* Auto Detected Readonly Slot Display Card */
-        .lokasi-auto-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(6, 78, 59, 0.35) 100%);
-            border: 2px solid #10b981;
-            color: #34d399;
-            font-size: 1.25rem;
+        .slot-info h3 {
+            font-size: 1.3rem;
             font-weight: 800;
-            padding: 0.8rem 1.2rem;
-            border-radius: 12px;
+            color: var(--primary);
+        }
+
+        .toggle-switch {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 0.6rem;
-            letter-spacing: 2px;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.22);
-            text-transform: uppercase;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
         }
 
-        .lokasi-auto-card.outside {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(127, 29, 29, 0.3) 100%);
-            border-color: #ef4444;
-            color: #fca5a5;
-            font-size: 1rem;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
-        }
-
-        .grid-viz-panel {
+        /* ─── Step 4: Summary Card ─── */
+        .summary-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
             margin-top: 1rem;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 14px;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.35);
-            width: 100%;
         }
 
-        .grid-viz-panel h3 {
-            width: 100%;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--accent-gps);
+        .summary-section {
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .summary-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .summary-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
             gap: 0.4rem;
         }
 
-        #gridCanvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            max-width: 100%;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: #050a14;
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
         }
 
-        .grid-legend {
-            width: 100%;
+        /* ─── Step 5: History Log ─── */
+        .history-toolbar {
             display: flex;
-            gap: 1.2rem;
-            margin-top: 0.85rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 3px;
-            display: inline-block;
-            margin-right: 4px;
-            vertical-align: middle;
-        }
-
-        .sent-log-panel {
-            margin-top: 1rem;
-            border: 1px solid rgba(139, 92, 246, 0.25);
-            border-radius: 12px;
-            padding: 1rem;
-            background: rgba(139, 92, 246, 0.04);
-        }
-
-        .sent-log-panel h3 {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: #a78bfa;
-            margin-bottom: 0.6rem;
-            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.4rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
         }
 
-        .sent-log-empty {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-style: italic;
+        .search-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.6rem 1rem;
+            color: #fff;
+            font-size: 0.85rem;
+            width: 240px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
-        .sent-log-table {
+        .history-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .history-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.78rem;
-        }
-
-        .sent-log-table th {
-            color: var(--text-muted);
-            text-align: left;
-            padding: 0.4rem 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-        }
-
-        .sent-log-table td {
-            padding: 0.45rem 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            color: var(--text-main);
-        }
-
-        .sent-log-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .log-lokasi {
-            color: var(--accent-gps);
-            font-weight: 700;
-        }
-
-        .gps-loading-row {
-            display: none;
-            align-items: center;
-            gap: 0.65rem;
-            padding: 0.6rem 0;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-        }
-
-        .gps-loading-row.active {
-            display: flex;
-        }
-
-        .db-panel {
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 18px;
-            padding: 1.35rem;
-            background: rgba(139, 92, 246, 0.04);
-        }
-
-        .db-panel h2 {
-            color: #a78bfa;
-            border-bottom-color: rgba(139, 92, 246, 0.25);
-        }
-
-        .db-preview {
-            background: rgba(0, 0, 0, 0.35);
-            border-radius: 10px;
-            padding: 1rem 1.2rem;
-            margin-bottom: 1rem;
             font-size: 0.85rem;
-            color: var(--text-muted);
-            font-family: 'Inter', monospace;
-            line-height: 1.9;
-            border: 1px solid var(--border-color);
+            text-align: left;
         }
 
-        .db-success-msg {
-            display: none;
-            align-items: center;
-            gap: 0.5rem;
+        .history-table th {
+            background: rgba(0, 0, 0, 0.4);
             padding: 0.75rem 1rem;
-            border-radius: 10px;
-            background: rgba(139, 92, 246, 0.15);
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            color: #c4b5fd;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-        }
-
-        .db-success-msg.active {
-            display: flex;
-        }
-
-        .empty-results {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            padding: 4rem 2rem;
             color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .empty-history {
             text-align: center;
-            border: 2px dashed var(--border-color);
-            border-radius: 16px;
-            background: rgba(30, 41, 59, 0.3);
+            padding: 3rem 1rem;
+            color: var(--text-muted);
         }
 
-        .empty-results .empty-icon {
-            font-size: 3.5rem;
-            opacity: 0.4;
-        }
-
-        .toast-container {
+        /* ─── Toast Notifications ─── */
+        #toast-container {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            z-index: 9999;
         }
 
         .toast {
-            padding: 0.75rem 1.25rem;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            animation: slideIn 0.3s ease;
-            max-width: 340px;
-            backdrop-filter: blur(12px);
+            background: var(--card-solid);
+            border: 1px solid var(--border-color);
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--radius-md);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        }
-
-        .toast.success {
-            background: rgba(16, 185, 129, 0.95);
-            color: white;
-        }
-
-        .toast.error {
-            background: rgba(239, 68, 68, 0.95);
-            color: white;
-        }
-
-        .toast.info {
-            background: rgba(59, 130, 246, 0.95);
-            color: white;
+            color: #fff;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            animation: slideIn 0.3s ease-out;
         }
 
         @keyframes slideIn {
-            from {
-                transform: translateX(110px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        .hidden {
-            display: none !important;
+        .spinner {
+            animation: spin 1s linear infinite;
         }
-
-        .btn-type-large {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            font-size: 1.35rem;
-            font-weight: 800;
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text-muted);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .btn-type-large:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .btn-type-large.active {
-            background: rgba(59, 130, 246, 0.12);
-            border-color: rgba(59, 130, 246, 0.6);
-            color: #60a5fa;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-
 <body>
 
+    <!-- ─── Header ─── -->
     <header>
-        <h1>Container Vision AI</h1>
-        <p class="subtitle">Ambil foto container → OCR → Real-Time GPS Tracking → Kirim ke Database</p>
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-ship"></i>
+            </div>
+            <div class="brand-text">
+                <h1>Container OCR & GPS Tracker</h1>
+                <p>Inspection & Yard Positioning Workflow</p>
+            </div>
+        </div>
+        <div class="server-status">
+            <div class="status-dot" id="gps-status-dot"></div>
+            <span id="gps-status-text">GPS Module Ready</span>
+        </div>
     </header>
 
-    <div class="main-layout">
+    <div class="app-container">
 
-        <!-- ═══ Kolom Kiri — Input Gambar Container ═══════════════════ -->
-        <div>
-            <div class="panel">
-                <h2>📷 Input Foto Container</h2>
+        <!-- ─── Stepper Progress Bar ─── -->
+        <div class="stepper-bar">
+            <div class="stepper-track">
+                <div class="stepper-progress" id="stepper-progress"></div>
+            </div>
 
-                <div class="input-tabs">
-                    <button class="tab-btn active" id="tabCam" onclick="switchInputTab('cam')">📹 Live Kamera</button>
-                    <button class="tab-btn" id="tabFile" onclick="switchInputTab('file')">📁 Upload File Foto</button>
-                </div>
-
-                <!-- Section 1: Live Kamera -->
-                <div id="camSection">
-                    <div class="camera-wrapper" id="cameraWrapper">
-                        <video id="videoFeed" autoplay playsinline muted></video>
-                        <canvas id="captureCanvas"></canvas>
-
-                        <div class="camera-placeholder" id="camPlaceholder">
-                            <div class="cam-icon">📷</div>
-                            <span>Kamera belum aktif</span>
-                            <span style="font-size:0.78rem;">Tekan "Aktifkan Kamera" di bawah</span>
-                        </div>
-
-                        <div class="viewfinder-overlay" id="viewfinderOverlay">
-                            <div class="vf-corner vf-tl"></div>
-                            <div class="vf-corner vf-tr"></div>
-                            <div class="vf-corner vf-bl"></div>
-                            <div class="vf-corner vf-br"></div>
-                        </div>
-
-                        <div class="live-badge" id="liveBadge">
-                            <div class="live-dot"></div>LIVE
-                        </div>
-                    </div>
-
-                    <select id="camSelect" class="cam-select">
-                        <option value="">📷 Kamera Otomatis / Default</option>
-                    </select>
-
-                    <button class="btn btn-cam" id="btnStartCam">📷 Aktifkan Kamera</button>
-
-                    <div class="btn-row hidden" id="captureRow">
-                        <button class="btn btn-capture" id="btnCapture">📸 Ambil Foto</button>
-                        <button class="btn btn-retake  hidden" id="btnRetake">🔄 Ulangi</button>
-                    </div>
-                </div>
-
-                <!-- Section 2: Upload File -->
-                <div id="fileSection" class="hidden">
-                    <div class="file-upload-box" id="fileDropzone">
-                        <div style="font-size:2.5rem; margin-bottom:0.5rem; opacity:0.8;">📁</div>
-                        <div id="fileNameText" style="font-weight:600; font-size:0.92rem; color:var(--text-main);">Drag
-                            & Drop atau Klik Upload Foto</div>
-                        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.3rem;">Format: JPG, JPEG,
-                            PNG</div>
-                        <input type="file" id="fileUploadInput" accept=".jpg,.jpeg,.png">
-                    </div>
-                </div>
-
-                <button class="btn btn-ocr hidden" id="btnRunOCR">🔍 Jalankan OCR</button>
-
-                <div class="ocr-loading" id="ocrLoading">
-                    <div class="mini-spinner"></div>
-                    <span>Memproses gambar dengan EasyOCR, harap tunggu...</span>
-                </div>
-
-                <div id="ocrError" class="err-msg hidden"></div>
+            <div class="step-item active" id="step-nav-1" onclick="goToStep(1)">
+                <div class="step-bubble">1</div>
+                <div class="step-label">Ukuran</div>
+            </div>
+            <div class="step-item locked" id="step-nav-2" onclick="goToStep(2)">
+                <div class="step-bubble">2</div>
+                <div class="step-label">Foto & OCR</div>
+            </div>
+            <div class="step-item locked" id="step-nav-3" onclick="goToStep(3)">
+                <div class="step-bubble">3</div>
+                <div class="step-label">GPS Fix</div>
+            </div>
+            <div class="step-item locked" id="step-nav-4" onclick="goToStep(4)">
+                <div class="step-bubble">4</div>
+                <div class="step-label">Konfirmasi</div>
+            </div>
+            <div class="step-item locked" id="step-nav-5" onclick="goToStep(5)">
+                <div class="step-bubble">5</div>
+                <div class="step-label">Riwayat</div>
             </div>
         </div>
 
-        <!-- ═══ Kolom Kanan — Hasil & GPS Real-Time ════════════════ -->
-        <div class="results-section">
-
-            <div class="empty-results" id="emptyState">
-                <div class="empty-icon">🏗️</div>
-                <p style="font-size:1.05rem; font-weight:600; color:var(--text-main);">Belum ada hasil OCR</p>
-                <p style="font-size:0.88rem;">Aktifkan kamera / upload foto container, lalu jalankan OCR.</p>
+        <!-- ─── LANGKAH 1: Pemilihan Ukuran Kontainer ─── -->
+        <div class="step-content active" id="step-view-1">
+            <div class="step-header">
+                <h2><i class="fa-solid fa-ruler-combined" style="color: var(--primary);"></i> Langkah 1: Pemilihan Ukuran Kontainer</h2>
+                <p>Pilih dimensi ukuran kontainer yang sedang diinspeksi sebelum melanjutkan ke proses pengambilan foto.</p>
             </div>
 
-            <div id="resultsGroup" class="hidden">
-
-                <div class="step-indicator">
-                    <div class="step-dot" id="step1dot"></div>
-                    <span style="white-space:nowrap; font-weight:600;">1. OCR</span>
-                    <div class="step-line" id="step12line"></div>
-                    <div class="step-dot" id="step2dot"></div>
-                    <span style="white-space:nowrap; font-weight:600;">2. Real-Time GPS</span>
-                    <div class="step-line" id="step23line"></div>
-                    <div class="step-dot" id="step3dot"></div>
-                    <span style="white-space:nowrap; font-weight:600;">3. Database</span>
+            <div class="size-grid">
+                <div class="size-card" id="size-card-20ft" onclick="selectContainerSize('20ft')">
+                    <span class="size-badge">Standard 20'</span>
+                    <div class="size-icon">
+                        <i class="fa-solid fa-box"></i>
+                    </div>
+                    <div class="size-title">20ft Container</div>
+                    <div class="size-desc">Kontainer standar panjang 20 feet (6.06m x 2.44m x 2.59m).</div>
                 </div>
 
-                <!-- Hasil OCR dengan High-Res Interactive Zoom Controls -->
-                <div class="panel">
-                    <h2>
-                        <span>📦 Hasil Ekstraksi OCR</span>
-                        <div class="zoom-tools">
-                            <button class="zoom-btn" onclick="zoomImage(0.25)">🔍 +</button>
-                            <button class="zoom-btn" onclick="zoomImage(-0.25)">🔍 -</button>
-                            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
-                            <button class="zoom-btn primary" onclick="openZoomModal()">⛶ Fullscreen Inspector</button>
-                        </div>
-                    </h2>
-
-                    <div class="image-preview" id="imagePreviewContainer" onwheel="handleWheelZoom(event)">
-                        <img id="annotatedImg" src="" alt="Annotated Container" onclick="openZoomModal()"
-                            title="Klik untuk Fullscreen Zoom Inspector">
-                        <div class="zoom-badge" id="zoomBadge">100% Zoom</div>
+                <div class="size-card" id="size-card-40ft" onclick="selectContainerSize('40ft')">
+                    <span class="size-badge">Standard 40' / High Cube</span>
+                    <div class="size-icon">
+                        <i class="fa-solid fa-boxes-stacked"></i>
                     </div>
+                    <div class="size-title">40ft Container</div>
+                    <div class="size-desc">Kontainer panjang 40 feet (12.19m x 2.44m x 2.59m/2.89m).</div>
+                </div>
+            </div>
 
-                    <div class="extracted-data">
-                        <div class="data-card" style="cursor: pointer;"
-                            onclick="editOcrValue('ocrSerial', 'Serial Number :')" title="Klik untuk edit">
-                            <span class="data-label">Serial Number ✏️</span>
-                            <span class="data-value" id="ocrSerial">—</span>
-                        </div>
-                        <div class="data-card" style="cursor: pointer;"
-                            onclick="editOcrValue('ocrCheck', 'Check Number :')" title="Klik untuk edit">
-                            <span class="data-label">Check Number ✏️</span>
-                            <span class="data-value" id="ocrCheck">—</span>
-                        </div>
-                        <div class="data-card" style="grid-column: 1 / -1; align-items: center; text-align: center;">
-                            <span class="data-label">Nomor Container</span>
-                            <span class="data-value" style="color:var(--accent-primary);" id="ocrNomor">—</span>
-                        </div>
-                        <div class="data-card" style="grid-column: 1 / -1; align-items: center; text-align: center;">
-                            <span class="data-label">Grade Container</span>
-                            <span class="grade-badge" id="gradeBadge"
-                                style="margin-top: 0; border:1px solid gray;">—</span>
-                        </div>
-                        <div style="grid-column: 1 / -1; display: flex; gap: 1.25rem; margin-top: 0.75rem;">
-                            <button id="btn20FT" class="btn-type-large active" onclick="setContainerType('20FT')">20
-                                FT</button>
-                            <button id="btn40FT" class="btn-type-large" onclick="setContainerType('40FT')">40
-                                FT</button>
-                        </div>
-                    </div>
+            <div class="actions-footer">
+                <div></div>
+                <button class="btn btn-primary" id="btn-next-step1" disabled onclick="goToStep(2)">
+                    Lanjut ke Langkah 2 (Foto & OCR) <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ─── LANGKAH 2: Pengambilan Foto & Eksekusi OCR ─── -->
+        <div class="step-content" id="step-view-2">
+            <div class="step-header">
+                <h2><i class="fa-solid fa-camera" style="color: var(--primary);"></i> Langkah 2: Pengambilan Foto & OCR</h2>
+                <p>Ambil foto nomor kontainer secara langsung via kamera atau upload file gambar.</p>
+            </div>
+
+            <div class="tab-bar">
+                <button class="tab-btn active" id="tab-btn-camera" onclick="switchMediaTab('camera')">
+                    <i class="fa-solid fa-video"></i> Kamera Langsung
+                </button>
+                <button class="tab-btn" id="tab-btn-file" onclick="switchMediaTab('file')">
+                    <i class="fa-solid fa-upload"></i> Upload Gambar
+                </button>
+            </div>
+
+            <!-- Tab Content Camera -->
+            <div class="media-input-box" id="media-tab-camera">
+                <video id="webcam-stream" class="video-preview" autoplay playsinline style="display:none;"></video>
+                <img id="camera-snapshot-img" class="video-preview" style="display:none; border: 2px solid var(--primary);" alt="Snapshot Foto Captured">
+                <canvas id="capture-canvas" style="display:none;"></canvas>
+                
+                <div id="camera-placeholder">
+                    <i class="fa-solid fa-camera-retro" style="font-size: 3rem; color: var(--text-muted);"></i>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Aktifkan kamera untuk mengambil foto kontainer.</p>
                 </div>
 
-                <!-- Panel Real-Time GPS Tracking -->
-                <div class="panel gps-panel">
-                    <h2>
-                        <span>📍 Koordinat GPS (Real-Time Rover)</span>
-                        <span id="liveGpsBadge" class="live-status-pill">
-                            <span class="pulse-dot"></span>LIVE TELEMETRY
-                        </span>
-                    </h2>
-
-                    <div class="gps-top-bar">
-                        <div>
-                            <span id="modeBadge" class="mode-badge">📡 Serial Hardware GPS</span>
-                        </div>
-                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                            <button id="btnToggleLive" class="btn btn-live">⏸️ Pause Live</button>
-                            <button id="btnToggleSim" class="btn btn-sim">🎮 Simulasi Rover</button>
-                            <button id="btnSnapGps" class="btn btn-snap">📌 Snap Posisi Ini</button>
-                        </div>
-                    </div>
-
-                    <div class="gps-loading-row" id="gpsLoading">
-                        <div class="mini-spinner green"></div>
-                        <span>Menghubungkan ke stream GPS real-time...</span>
-                    </div>
-
-                    <div id="gpsError" class="err-msg hidden"></div>
-
-                    <div id="gpsResult">
-                        <div class="gps-grid">
-                            <div class="gps-item">
-                                <div class="data-label">Latitude</div>
-                                <div class="data-value" id="gpsLat">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Longitude</div>
-                                <div class="data-value" id="gpsLon">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Altitude</div>
-                                <div class="data-value" id="gpsAlt">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Waktu (WIB)</div>
-                                <div class="data-value" id="gpsTime" style="font-size:0.82rem;">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Easting (X)</div>
-                                <div class="data-value" id="gpsEasting" style="color:#60a5fa;">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Northing (Y)</div>
-                                <div class="data-value" id="gpsNorthing" style="color:#60a5fa;">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">UTM Zone</div>
-                                <div class="data-value" id="gpsZone" style="color:#c084fc;">—</div>
-                            </div>
-                            <div class="gps-item">
-                                <div class="data-label">Satellites</div>
-                                <div class="data-value" id="gpsCount" style="font-size:0.85rem;">—</div>
-                            </div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <span class="data-label">RTK Status: </span>
-                                <span class="rtk-badge rtk-none" id="rtkBadge">—</span>
-                            </div>
-                        </div>
-
-                        <!-- Display Auto Detected Slot (Read-Only) -->
-                        <div class="lokasi-group">
-                            <label style="font-size:0.82rem; color:var(--accent-gps); font-weight:700;">📌 Lokasi Slot
-                                Container (100% Auto-Detected GPS)</label>
-                            <div class="lokasi-auto-card" id="autoSlotCard">
-                                <span>📍</span>
-                                <span id="autoSlotDisplay">MENUNGGU SISTER ROVER GPS...</span>
-                            </div>
-                            <!-- Hidden input value for database payload -->
-                            <input type="hidden" id="inputLokasi" value="">
-                            <span style="font-size:0.72rem; color:var(--text-muted);">Slot ter-detect secara otomatis &
-                                real-time dari posisi rover saat ini.</span>
-                        </div>
-
-                        <!-- Grid Visualisasi Moving Rover Marker -->
-                        <div class="grid-viz-panel">
-                            <h3>🗺️ Mapping Live Visualisasi Pergerakan Rover Yard (Rotasi 53.83°)</h3>
-                            <canvas id="gridCanvas"></canvas>
-                            <div class="grid-legend">
-                                <span><span class="legend-dot" style="background:#10b981;"></span>Slot aktif (Rover di
-                                    dalam area slot)</span>
-                                <span><span class="legend-dot" style="background:#f97316;"></span>Slot container</span>
-                                <span><span class="legend-dot" style="background:#eab308;"></span>Border 6 titik
-                                    survey</span>
-                                <span><span class="legend-dot" style="background:#ef4444;"></span>Rover Marker
-                                    Moving</span>
-                                <span><span class="legend-dot" style="background:#38bdf8;"></span>Lintasan Pergerakan
-                                    Rover (Trail)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-gps" id="btnRecordGPS" style="margin-top:1rem;">
-                        📡 Snapshot & Lock Posisi GPS
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="btn-start-cam" onclick="startCamera()">
+                        <i class="fa-solid fa-power-off"></i> Buka Kamera
+                    </button>
+                    <button class="btn btn-primary" id="btn-capture-cam" style="display:none;" onclick="captureAndOCR()">
+                        <i class="fa-solid fa-camera"></i> Ambil Foto & Scan OCR
                     </button>
                 </div>
+            </div>
 
-                <!-- Panel Database -->
-                <div class="panel db-panel hidden" id="dbPanel">
-                    <h2>🗄️ Kirim ke Database</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.85rem;">
-                        Data OCR dan Telemetri Real-Time GPS siap dikirim ke Database.
-                    </p>
-
-                    <div class="db-preview">
-                        <div><span style="color:#a78bfa;">Container :</span> <span id="previewNomor"
-                                style="color:var(--text-main);">—</span></div>
-                        <div><span style="color:#a78bfa;">Lokasi :</span> <span id="previewLokasi"
-                                style="color:#10b981; font-weight:700;">—</span></div>
-                        <div><span style="color:#a78bfa;">Lat / Lon :</span> <span id="previewLatLon"
-                                style="color:var(--text-main);">—</span></div>
-                        <div><span style="color:#a78bfa;">Easting :</span> <span id="previewEasting"
-                                style="color:#60a5fa;">—</span></div>
-                        <div><span style="color:#a78bfa;">Northing :</span> <span id="previewNorthing"
-                                style="color:#60a5fa;">—</span></div>
-                        <div><span style="color:#a78bfa;">UTM Zone :</span> <span id="previewZone"
-                                style="color:#c084fc;">—</span></div>
-                        <div><span style="color:#a78bfa;">RTK :</span> <span id="previewRtk"
-                                style="color:var(--text-main);">—</span></div>
-                        <div><span style="color:#a78bfa;">Waktu :</span> <span id="previewTime"
-                                style="color:var(--text-main);">—</span></div>
-                    </div>
-
-                    <button class="btn btn-db" id="btnSendDB">🚀 Send to Database</button>
-
-                    <div class="db-success-msg" id="dbSuccessMsg">
-                        ✅ Data berhasil dikirim! (Lihat console/terminal untuk detail)
-                    </div>
-
-                    <!-- Baris Terkirim -->
-                    <div class="sent-log-panel" id="sentLogPanel">
-                        <h3>📋 Riwayat Data Terkirim</h3>
-                        <div class="sent-log-empty" id="sentLogEmpty">Belum ada data yang dikirim.</div>
-                        <table class="sent-log-table hidden" id="sentLogTable">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Waktu</th>
-                                    <th>Container</th>
-                                    <th>Lokasi</th>
-                                    <th>Easting</th>
-                                    <th>Northing</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sentLogBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div><!-- /resultsGroup -->
-        </div><!-- /results-section -->
-    </div><!-- /main-layout -->
-
-    <!-- High-Res Zoom Inspector Modal -->
-    <div class="zoom-modal-backdrop hidden" id="zoomModal" onclick="closeZoomModal()">
-        <div class="zoom-modal-content" onclick="event.stopPropagation()">
-            <div class="zoom-modal-header">
-                <h3>🔍 High-Res Fullscreen Inspector OCR Container</h3>
-                <div class="zoom-modal-actions">
-                    <button class="modal-btn" onclick="modalZoom(0.3)">🔍 + Zoom In</button>
-                    <button class="modal-btn" onclick="modalZoom(-0.3)">🔍 - Zoom Out</button>
-                    <button class="modal-btn" onclick="modalResetZoom()">🔄 100% Reset</button>
-                    <button class="modal-btn close-btn" onclick="closeZoomModal()">✖ Tutup</button>
+            <!-- Tab Content File Upload -->
+            <div class="media-input-box" id="media-tab-file" style="display:none;">
+                <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileUpload(event)">
+                <div class="upload-dropzone" onclick="document.getElementById('file-input').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p style="font-weight: 600;">Klik atau seret file gambar kontainer ke sini</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Format didukung: JPG, JPEG, PNG</p>
                 </div>
             </div>
-            <div class="zoom-modal-body" id="modalImgWrapper">
-                <img id="modalAnnotatedImg" src="" alt="Zoomed Container Text">
+
+            <!-- OCR Results Display Section -->
+            <div id="ocr-results-container" style="display:none;">
+                <div class="ocr-preview-grid">
+                    <div class="ocr-img-card">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Foto Asli Captured</p>
+                        <img id="img-preview-original" src="" alt="Original Preview">
+                    </div>
+                    <div class="ocr-img-card">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hasil Anotasi EasyOCR</p>
+                        <img id="img-preview-annotated" src="" alt="OCR Annotated Preview">
+                    </div>
+                </div>
+
+                <div class="ocr-results-box">
+                    <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem; color: var(--primary);">
+                        <i class="fa-solid fa-file-contract"></i> Hasil Deteksi Teks OCR
+                    </h4>
+
+                    <div class="ocr-field-row">
+                        <span class="field-label">Nomor Container :</span>
+                        <span class="field-val" id="res-no-container">-</span>
+                    </div>
+                    <div class="ocr-field-row">
+                        <span class="field-label">Serial Number :</span>
+                        <span class="field-val" id="res-serial">-</span>
+                    </div>
+                    <div class="ocr-field-row">
+                        <span class="field-label">Check Number :</span>
+                        <span class="field-val" id="res-check">-</span>
+                    </div>
+                    <div class="ocr-field-row">
+                        <span class="field-label">ISO Check Digit :</span>
+                        <span class="field-val" id="res-iso-check">-</span>
+                    </div>
+                    <div class="ocr-field-row">
+                        <span class="field-label">Grade Kualitas OCR :</span>
+                        <span id="res-grade-badge" class="grade-badge a">Grade : A</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-footer">
+                <button class="btn btn-secondary" onclick="goToStep(1)">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali
+                </button>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-danger" id="btn-retake-ocr" style="display:none;" onclick="resetStep2Data()">
+                        <i class="fa-solid fa-rotate-left"></i> Ulangi Foto
+                    </button>
+                    <button class="btn btn-primary" id="btn-next-step2" disabled onclick="goToStep(3)">
+                        Lanjut ke Langkah 3 (GPS Real-Time) <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- ─── LANGKAH 3: Deteksi GPS Real-Time & Visualisasi Mapping ─── -->
+        <div class="step-content" id="step-view-3">
+            <div class="step-header">
+                <h2><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> Langkah 3: Deteksi GPS & Mapping Real-Time</h2>
+                <p>Membaca koordinat GPS dan pemetaan slot/blok kontainer di depo secara visual.</p>
+            </div>
+
+            <!-- Card Visualisasi Mapping Canvas Grid Depo -->
+            <div class="map-card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-map-location-dot"></i> Pemetaan Spasial Grid & Tracking Beacon Rover
+                        </h4>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Visualisasi grid slot depo kontainer & posisi fisik rover bergerak secara real-time</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #eab308; display: inline-block; border-radius: 2px;"></span> Area Depo</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #10b981; display: inline-block; border-radius: 2px;"></span> Slot Terdeteksi</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #ef4444; display: inline-block; border-radius: 50%;"></span> Rover 📍</span>
+                    </div>
+                </div>
+                <div style="position: relative; width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: #050811; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
+                    <canvas id="depoGridCanvas" style="width: 100%; height: auto; max-height: 440px; display: block;"></canvas>
+                </div>
+            </div>
+
+            <div class="gps-slot-card">
+                <div class="slot-info">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Deteksi Lokasi Blok Depo</p>
+                    <h3 id="gps-val-slot">SLOT H1</h3>
+                </div>
+                <button class="btn btn-success" onclick="refreshGPSData()">
+                    <i class="fa-solid fa-rotate" id="refresh-gps-icon"></i> Refresh / Ambil Ulang GPS
+                </button>
+            </div>
+
+            <div class="gps-grid">
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-compass"></i> Latitude</div>
+                    <div class="gps-card-val" id="gps-val-lat">-6.112607</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-compass"></i> Longitude</div>
+                    <div class="gps-card-val" id="gps-val-lon">106.881780</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-mountain"></i> Altitude</div>
+                    <div class="gps-card-val" id="gps-val-alt">12.5 m</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-draw-polygon"></i> UTM Easting</div>
+                    <div class="gps-card-val" id="gps-val-easting">708241.53 m</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-draw-polygon"></i> UTM Northing</div>
+                    <div class="gps-card-val" id="gps-val-northing">9323986.32 m</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-globe"></i> UTM Zone</div>
+                    <div class="gps-card-val" id="gps-val-utmzone">48S</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-satellite"></i> Status RTK</div>
+                    <div class="gps-card-val" id="gps-val-rtk" style="color: var(--success);">RTK FIX</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-card-title"><i class="fa-solid fa-clock"></i> Timestamp WIB</div>
+                    <div class="gps-card-val" id="gps-val-time" style="font-size: 0.85rem;">-</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sim-toggle-checkbox" onchange="toggleGPSSimulation(this.checked)">
+                    <span>Mode Simulasi Pergerakan GPS</span>
+                </label>
+            </div>
+
+            <div class="actions-footer">
+                <button class="btn btn-secondary" onclick="goToStep(2)">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali
+                </button>
+                <button class="btn btn-primary" id="btn-next-step3" onclick="goToStep(4)">
+                    Lanjut ke Langkah 4 (Konfirmasi) <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ─── LANGKAH 4: Konfirmasi & Penyimpanan Data ─── -->
+        <div class="step-content" id="step-view-4">
+            <div class="step-header">
+                <h2><i class="fa-solid fa-clipboard-check" style="color: var(--success);"></i> Langkah 4: Konfirmasi & Penyimpanan Data</h2>
+                <p>Periksa kembali seluruh ringkasan data sebelum disimpan ke basis data.</p>
+            </div>
+
+            <div id="summary-details-container">
+                <div class="summary-card">
+                    <!-- Seksi Size -->
+                    <div class="summary-section">
+                        <div class="summary-title"><i class="fa-solid fa-box"></i> Ukuran Kontainer</div>
+                        <div style="font-size: 1.2rem; font-weight: 800; color: var(--primary);" id="sum-size">
+                            20ft Container
+                        </div>
+                    </div>
+
+                    <!-- Seksi OCR -->
+                    <div class="summary-section">
+                        <div class="summary-title"><i class="fa-solid fa-file-lines"></i> Hasil Inspeksi OCR</div>
+                        <div class="summary-grid">
+                            <div>
+                                <span class="field-label">Nomor Container:</span>
+                                <div style="font-weight: 700; font-family: monospace;" id="sum-no-container">-</div>
+                            </div>
+                            <div>
+                                <span class="field-label">Serial / Check:</span>
+                                <div style="font-weight: 700; font-family: monospace;" id="sum-serial-check">-</div>
+                            </div>
+                            <div>
+                                <span class="field-label">Grade OCR:</span>
+                                <div id="sum-grade">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seksi GPS -->
+                    <div class="summary-section">
+                        <div class="summary-title"><i class="fa-solid fa-map-location-dot"></i> Koordinat & Lokasi Depo</div>
+                        <div class="summary-grid">
+                            <div>
+                                <span class="field-label">Lokasi Slot Blok:</span>
+                                <div style="font-weight: 700; color: var(--success);" id="sum-slot">-</div>
+                            </div>
+                            <div>
+                                <span class="field-label">Lat / Lon:</span>
+                                <div style="font-family: monospace;" id="sum-latlon">-</div>
+                            </div>
+                            <div>
+                                <span class="field-label">UTM Easting/Northing:</span>
+                                <div style="font-family: monospace;" id="sum-utm">-</div>
+                            </div>
+                            <div>
+                                <span class="field-label">Waktu WIB:</span>
+                                <div style="font-size: 0.85rem;" id="sum-time">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions-footer">
+                    <button class="btn btn-secondary" onclick="goToStep(3)">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali / Ubah
+                    </button>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-success" id="btn-save-data" onclick="submitSaveData(false)">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Data Ke Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Success Box with Direct Button back to Step 1 -->
+            <div id="save-success-box" style="display:none; background: rgba(16, 185, 129, 0.12); border: 2px solid var(--success); border-radius: var(--radius-md); padding: 2rem; text-align: center; margin-top: 1rem;">
+                <i class="fa-solid fa-circle-check" style="font-size: 3rem; color: var(--success); margin-bottom: 0.75rem;"></i>
+                <h3 style="color: #34d399; font-weight: 800; font-size: 1.4rem;">Data Kontainer Berhasil Disimpan!</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">Data inspeksi telah dicatat secara persisten ke database depo.</p>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.75rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="padding: 0.85rem 1.6rem; font-size: 1rem;" onclick="resetWorkflowNewInput()">
+                        <i class="fa-solid fa-rotate-left"></i> Input Data Baru (Kembali ke Langkah 1)
+                    </button>
+                    <button class="btn btn-secondary" style="padding: 0.85rem 1.4rem;" onclick="goToStep(5)">
+                        <i class="fa-solid fa-database"></i> Lihat Riwayat Log (Langkah 5)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ─── LANGKAH 5: Riwayat & Log Data Tersimpan ─── -->
+        <div class="step-content" id="step-view-5">
+            <div class="step-header">
+                <h2><i class="fa-solid fa-database" style="color: var(--purple);"></i> Langkah 5: Riwayat / Log Data Tersimpan</h2>
+                <p>Daftar riwayat data kontainer yang berhasil diinspeksi dan disimpan.</p>
+            </div>
+
+            <div class="history-toolbar">
+                <input type="text" class="search-input" id="history-search" placeholder="Cari Nomor Container / Slot..." oninput="renderHistoryTable()">
+                
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="/api/export/xlsx" class="btn btn-secondary" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-file-excel" style="color: #34d399;"></i> Ekspor Excel (XLSX)
+                    </a>
+                    <a href="/api/export/csv" class="btn btn-secondary" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-file-csv" style="color: var(--success);"></i> Ekspor CSV
+                    </a>
+                    <a href="/api/export/json" class="btn btn-secondary" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-file-code" style="color: var(--primary);"></i> Ekspor JSON
+                    </a>
+                    <button class="btn btn-danger" id="btn-delete-selected" disabled style="font-size: 0.8rem;" onclick="deleteSelectedRecords()">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Terpilih
+                    </button>
+                    <button class="btn btn-secondary" style="font-size: 0.8rem; color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="clearHistoryLog()">
+                        <i class="fa-solid fa-dumpster"></i> Hapus Semua Log
+                    </button>
+                </div>
+            </div>
+
+            <div class="history-table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="select-all-history" onchange="toggleSelectAllHistory(this.checked)" title="Pilih Semua">
+                            </th>
+                            <th>Waktu WIB</th>
+                            <th>Ukuran</th>
+                            <th>Nomor Container</th>
+                            <th>Serial / Check</th>
+                            <th>Grade</th>
+                            <th>Lokasi Slot Depo</th>
+                            <th style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <!-- History rows appended dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="actions-footer">
+                <div></div>
+                <button class="btn btn-primary" onclick="resetWorkflowNewInput()">
+                    <i class="fa-solid fa-circle-plus"></i> Input Data Baru (Reset Alur)
+                </button>
+            </div>
+        </div>
+
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
 
     <script>
-        // ─── State ─────────────────────────────────────────────────
-        let stream = null;   // MediaStream
-        let capturedB64 = null;   // snapshot base64 string
-        let ocrResults = null;   // hasil dari /process-camera
-        let gpsData = null;   // telemetry GPS terkini
-        let liveTrackingActive = true;
-        let sseSource = null;
-        let pollTimer = null;
-        let roverTrailUTM = [];
-        let activeTab = 'cam';
+        // ─── State Management ───
+        const appState = {
+            currentStep: 1,
+            completedSteps: new Set(),
+            selectedSize: null, // '20ft' or '40ft'
+            ocrData: null,
+            ocrImageUri: null,
+            gpsData: null,
+            webcamStream: null,
+            historyLogs: []
+        };
 
-        // Zoom State
-        let currentScale = 1.0;
-        let modalScale = 1.8;
-
-        // ─── DOM refs ──────────────────────────────────────────────
-        const video = document.getElementById('videoFeed');
-        const canvas = document.getElementById('captureCanvas');
-        const ctx = canvas.getContext('2d');
-        const camWrapper = document.getElementById('cameraWrapper');
-        const camPlaceholder = document.getElementById('camPlaceholder');
-        const viewfinder = document.getElementById('viewfinderOverlay');
-        const liveBadge = document.getElementById('liveBadge');
-        const camSelect = document.getElementById('camSelect');
-        const btnStartCam = document.getElementById('btnStartCam');
-        const captureRow = document.getElementById('captureRow');
-        const btnCapture = document.getElementById('btnCapture');
-        const btnRetake = document.getElementById('btnRetake');
-        const btnRunOCR = document.getElementById('btnRunOCR');
-        const ocrLoading = document.getElementById('ocrLoading');
-        const ocrError = document.getElementById('ocrError');
-        const emptyState = document.getElementById('emptyState');
-        const resultsGroup = document.getElementById('resultsGroup');
-
-        const fileUploadInput = document.getElementById('fileUploadInput');
-        const fileNameText = document.getElementById('fileNameText');
-
-        // Step indicator
-        const step1dot = document.getElementById('step1dot');
-        const step2dot = document.getElementById('step2dot');
-        const step3dot = document.getElementById('step3dot');
-        const step12ln = document.getElementById('step12line');
-        const step23ln = document.getElementById('step23line');
-
-        // ─── Interactive Image Zoom Handlers ────────────────────────
-        function updateZoomImage() {
-            const img = document.getElementById('annotatedImg');
-            const badge = document.getElementById('zoomBadge');
-            if (img) img.style.transform = `scale(${currentScale})`;
-            if (badge) badge.textContent = `${Math.round(currentScale * 100)}% Zoom`;
-        }
-
-        function zoomImage(delta) {
-            currentScale = Math.max(0.75, Math.min(5.0, currentScale + delta));
-            updateZoomImage();
-        }
-
-        function resetZoom() {
-            currentScale = 1.0;
-            updateZoomImage();
-        }
-
-        function handleWheelZoom(e) {
-            e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.25 : -0.25;
-            zoomImage(delta);
-        }
-
-        function openZoomModal() {
-            const srcImg = document.getElementById('annotatedImg');
-            const modalImg = document.getElementById('modalAnnotatedImg');
-            const modal = document.getElementById('zoomModal');
-
-            if (srcImg && srcImg.src && srcImg.src !== window.location.href) {
-                modalImg.src = srcImg.src;
-                modalScale = 1.8; // Auto 180% high-contrast zoom
-                updateModalZoom();
-                modal.classList.remove('hidden');
-            }
-        }
-
-        function closeZoomModal() {
-            document.getElementById('zoomModal').classList.add('hidden');
-        }
-
-        function modalZoom(delta) {
-            modalScale = Math.max(0.5, Math.min(6.0, modalScale + delta));
-            updateModalZoom();
-        }
-
-        function modalResetZoom() {
-            modalScale = 1.0;
-            updateModalZoom();
-        }
-
-        function updateModalZoom() {
-            const img = document.getElementById('modalAnnotatedImg');
-            if (img) img.style.transform = `scale(${modalScale})`;
-        }
-
-        // Tipe Container & Edit OCR Functions
-        let containerType = '20FT';
-        function setContainerType(type) {
-            containerType = type;
-            document.getElementById('btn20FT').className = (type === '20FT') ? 'btn-type-large active' : 'btn-type-large';
-            document.getElementById('btn40FT').className = (type === '40FT') ? 'btn-type-large active' : 'btn-type-large';
-            updateDbPreview();
-        }
-
-        function editOcrValue(id, key) {
-            const el = document.getElementById(id);
-            let currentVal = el.textContent === '—' ? '' : el.textContent;
-
-            while (true) {
-                let promptText = `Edit ${key.replace(' :', '')}:`;
-                if (key.includes('Serial')) {
-                    promptText = "Edit Serial Number (Harus 6 angka):";
-                } else if (key.includes('Check')) {
-                    promptText = "Edit Check Number (Harus 1 angka):";
-                }
-
-                let newVal = prompt(promptText, currentVal);
-                if (newVal === null) return; // Batal
-
-                newVal = newVal.trim();
-
-                if (key.includes('Serial') && !/^\d{6}$/.test(newVal)) {
-                    alert("Error: Serial Number harus berisi tepat 6 digit angka!");
-                    continue;
-                } else if (key.includes('Check') && !/^\d{1}$/.test(newVal)) {
-                    alert("Error: Check Number harus berisi tepat 1 digit angka!");
-                    continue;
-                }
-
-                el.textContent = newVal || '—';
-                if (ocrResults) {
-                    ocrResults[key] = newVal || '—';
-                    // Update Nomor Container
-                    const serial = document.getElementById('ocrSerial').textContent;
-                    const check = document.getElementById('ocrCheck').textContent;
-                    const newNomor = "SPNU" + (serial === '—' ? '' : serial) + (check === '—' ? '' : check);
-                    document.getElementById('ocrNomor').textContent = newNomor;
-                    ocrResults['Nomor Container :'] = newNomor;
-                    updateDbPreview(); // Update preview database
-                }
-                break;
-            }
-        }
-
-        // Tab Switching Function
-        function switchInputTab(tab) {
-            activeTab = tab;
-            document.getElementById('tabCam').className = tab === 'cam' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tabFile').className = tab === 'file' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('camSection').className = tab === 'cam' ? '' : 'hidden';
-            document.getElementById('fileSection').className = tab === 'file' ? '' : 'hidden';
-
-            if (tab === 'file') {
-                btnRunOCR.classList.remove('hidden');
-            } else {
-                if (!capturedB64) btnRunOCR.classList.add('hidden');
-            }
-        }
-
-        // File Input Handler
-        fileUploadInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                fileNameText.textContent = '📄 ' + file.name;
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    capturedB64 = evt.target.result;
-                    btnRunOCR.classList.remove('hidden');
-                    showToast('File foto berhasil dimuat! Tekan "Jalankan OCR".', 'success');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // ─── Toast helper ───────────────────────────────────────────
-        function showToast(msg, type = 'info') {
-            const c = document.getElementById('toastContainer');
-            const t = document.createElement('div');
-            t.className = `toast ${type}`;
-            t.textContent = msg;
-            c.appendChild(t);
-            setTimeout(() => t.remove(), 4000);
-        }
-
-        // ─── Peripheral Device Management (Webcam / Integrated Camera) ───
-        async function updateCameraDevices() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                const currentVal = camSelect.value;
-
-                camSelect.innerHTML = '<option value="">📷 Kamera Otomatis / Default</option>';
-                if (videoDevices.length === 0) return;
-
-                videoDevices.forEach((device, idx) => {
-                    const opt = document.createElement('option');
-                    opt.value = device.deviceId;
-                    opt.textContent = device.label || `Kamera ${idx + 1} (${device.deviceId ? device.deviceId.slice(0, 8) : 'Direct'})`;
-                    camSelect.appendChild(opt);
-                });
-
-                if (currentVal && videoDevices.some(d => d.deviceId === currentVal)) {
-                    camSelect.value = currentVal;
-                }
-            } catch (err) {
-                console.warn('Error loading camera devices:', err);
-            }
-        }
-
-        updateCameraDevices();
-        if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
-            navigator.mediaDevices.addEventListener('devicechange', updateCameraDevices);
-        }
-
-        camSelect.addEventListener('change', async () => {
-            if (stream) {
-                stopCamera();
-                btnStartCam.click();
-            }
-        });
-
-        // ─── Kamera Handlers ─────────────────────────────────────────
-        btnStartCam.addEventListener('click', async () => {
-            if (stream) {
-                stopCamera();
-                return;
-            }
-            try {
-                const selectedDeviceId = camSelect.value;
-                let videoConstraints = { width: { ideal: 1280 }, height: { ideal: 960 } };
-
-                if (selectedDeviceId && selectedDeviceId.trim() !== "") {
-                    videoConstraints.deviceId = { exact: selectedDeviceId };
-                } else {
-                    videoConstraints.facingMode = { ideal: 'environment' };
-                }
-
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
-                } catch (e) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                }
-
-                await updateCameraDevices();
-                if (selectedDeviceId) camSelect.value = selectedDeviceId;
-
-                video.srcObject = stream;
-                video.style.display = 'block';
-                canvas.style.display = 'none';
-                camPlaceholder.style.display = 'none';
-                viewfinder.classList.add('visible');
-                liveBadge.classList.add('visible');
-                camWrapper.classList.add('active');
-                camWrapper.classList.remove('captured');
-
-                btnStartCam.innerHTML = '🔴 Matikan Kamera';
-                btnStartCam.style.background = '#374151';
-
-                captureRow.classList.remove('hidden');
-                btnRetake.classList.add('hidden');
-                btnRunOCR.classList.add('hidden');
-                ocrError.classList.add('hidden');
-
-            } catch (err) {
-                showToast('Gagal membuka kamera: ' + err.message, 'error');
-                ocrError.textContent = '❌ Gagal mengakses kamera: ' + err.message + '. Anda juga dapat mengunggah file foto container melalui tab "Upload File Foto".';
-                ocrError.classList.remove('hidden');
-            }
-        });
-
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
-            }
-            video.srcObject = null;
-            video.style.display = 'none';
-            camPlaceholder.style.display = 'flex';
-            viewfinder.classList.remove('visible');
-            liveBadge.classList.remove('visible');
-            camWrapper.classList.remove('active', 'captured');
-            btnStartCam.innerHTML = '📷 Aktifkan Kamera';
-            btnStartCam.style.background = '';
-            captureRow.classList.add('hidden');
-            btnRunOCR.classList.add('hidden');
-            capturedB64 = null;
-        }
-
-        btnCapture.addEventListener('click', () => {
-            if (!stream) return;
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 960;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-            liveBadge.classList.remove('visible');
-            viewfinder.classList.remove('visible');
-            camWrapper.classList.remove('active');
-            camWrapper.classList.add('captured');
-
-            capturedB64 = canvas.toDataURL('image/jpeg', 0.92);
-
-            btnCapture.classList.add('hidden');
-            btnRetake.classList.remove('hidden');
-            btnRunOCR.classList.remove('hidden');
-
-            showToast('Foto berhasil diambil! Tekan "Jalankan OCR".', 'success');
-        });
-
-        btnRetake.addEventListener('click', () => {
-            canvas.style.display = 'none';
-            video.style.display = 'block';
-            liveBadge.classList.add('visible');
-            viewfinder.classList.add('visible');
-            camWrapper.classList.remove('captured');
-            camWrapper.classList.add('active');
-            btnCapture.classList.remove('hidden');
-            btnRetake.classList.add('hidden');
-            btnRunOCR.classList.add('hidden');
-            ocrError.classList.add('hidden');
-            capturedB64 = null;
-        });
-
-        // ─── Jalankan OCR ──────────────────────────────────────────
-        btnRunOCR.addEventListener('click', async () => {
-            if (!capturedB64) { showToast('Ambil atau upload foto terlebih dahulu.', 'error'); return; }
-
-            btnRunOCR.disabled = true;
-            btnRunOCR.innerHTML = '⏳ Memproses...';
-            ocrLoading.classList.add('active');
-            ocrError.classList.add('hidden');
-
-            [step1dot, step2dot, step3dot].forEach(d => { d.className = 'step-dot'; });
-            [step12ln, step23ln].forEach(l => { l.className = 'step-line'; });
-            document.getElementById('dbPanel').classList.add('hidden');
-
-            try {
-                const res = await fetch('/process-camera', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: capturedB64, tolerance: 150 })
-                });
-                const data = await res.json();
-                if (!res.ok || data.error) throw new Error(data.error || 'OCR gagal.');
-
-                ocrResults = data.results;
-
-                document.getElementById('annotatedImg').src = data.image_uri;
-                resetZoom(); // Reset zoom state when new image arrives
-
-                const r = data.results;
-                document.getElementById('ocrSerial').textContent = r['Serial Number :'] || '—';
-                document.getElementById('ocrCheck').textContent = r['Check Number :'] || '—';
-
-                const initialSerial = r['Serial Number :'] || '';
-                const initialCheck = r['Check Number :'] || '';
-                const initialNomor = "SPNU" + initialSerial + initialCheck;
-                document.getElementById('ocrNomor').textContent = initialNomor;
-                if (ocrResults) ocrResults['Nomor Container :'] = initialNomor;
-
-                const grade = r['Grade'] || '';
-                const gb = document.getElementById('gradeBadge');
-                gb.textContent = grade;
-                gb.className = 'grade-badge';
-                if (grade.includes('Grade : A')) gb.classList.add('grade-a');
-                else if (grade.includes('Grade : B')) gb.classList.add('grade-b');
-                else gb.style.border = '1px solid gray';
-
-                emptyState.classList.add('hidden');
-                resultsGroup.classList.remove('hidden');
-
-                step1dot.classList.add('done');
-                step2dot.classList.add('active');
-
-                initRealTimeGpsTracking();
-
-                showToast('OCR selesai! Telemetri GPS real-time aktif.', 'success');
-
-            } catch (err) {
-                ocrError.textContent = '❌ ' + err.message;
-                ocrError.classList.remove('hidden');
-                showToast('OCR error: ' + err.message, 'error');
-            } finally {
-                ocrLoading.classList.remove('active');
-                btnRunOCR.disabled = false;
-                btnRunOCR.innerHTML = '🔍 Jalankan OCR';
-            }
-        });
-
-        // ─── Proj4 & Container Yard Spatial Definitions ─────────────
+        // ─── Real-Time Depo Mapping Canvas Engine ───
         if (window.proj4) {
             proj4.defs("EPSG:32748", "+proj=utm +zone=48 +south +datum=WGS84 +units=m +no_defs");
             proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
         }
 
-        const REF_LON = 106.88178028;
-        const REF_LAT = -6.11260706;
-        const refUTMCoords = window.proj4 ? proj4("EPSG:4326", "EPSG:32748", [REF_LON, REF_LAT]) : [708241.531, 9323986.322];
-        const REF_UTM_X = refUTMCoords[0];
-        const REF_UTM_Y = refUTMCoords[1];
+        const REF_LON = 106.88178028, REF_LAT = -6.11260706;
+        const refUTM = window.proj4 ? proj4("EPSG:4326", "EPSG:32748", [REF_LON, REF_LAT]) : [708241.531, 9323986.322];
+        const REF_UTM_X = refUTM[0], REF_UTM_Y = refUTM[1];
+        const CONTAINER_LENGTH = 6.0, CONTAINER_WIDTH = 3.0, ROTATION_DEG = 53.83;
 
-        const CONTAINER_LENGTH = 6.0;
-        const CONTAINER_WIDTH = 3.0;
-        const ROTATION_DEG = 53.83;
+        const boundaryPointsUTM = [
+            [106.88178028, -6.11260706], [106.88190898, -6.11251261],
+            [106.88187588, -6.11246944], [106.88189726, -6.11245381],
+            [106.88185392, -6.11239707], [106.88170742, -6.11250445]
+        ].map(pt => window.proj4 ? proj4("EPSG:4326", "EPSG:32748", pt) : [708241.5, 9323986.3]);
 
-        const boundaryPoints = [
-            [106.88178028, -6.11260706], // P1
-            [106.88190898, -6.11251261], // P2
-            [106.88187588, -6.11246944], // P3
-            [106.88189726, -6.11245381], // P4
-            [106.88185392, -6.11239707], // P5
-            [106.88170742, -6.11250445]  // P6
-        ];
-
-        const boundaryPointsUTM = boundaryPoints.map(pt => window.proj4 ? proj4("EPSG:4326", "EPSG:32748", pt) : [708241.5, 9323986.3]);
-
-        function computeRotatedPolygon(rotationDeg = ROTATION_DEG) {
-            const angle = rotationDeg * (Math.PI / 180);
-            const localPts = [];
-            for (const [utmX, utmY] of boundaryPointsUTM) {
-                const dx = utmX - REF_UTM_X;
-                const dy = utmY - REF_UTM_Y;
-                localPts.push({ x: dx, y: dy });
-            }
+        function computeRotatedPolygon() {
+            const angle = ROTATION_DEG * (Math.PI / 180);
             const polygon = [];
-            let minRx = Infinity, maxRx = -Infinity;
-            let minRy = Infinity, maxRy = -Infinity;
-            for (const p of localPts) {
-                const rx = p.x * Math.cos(angle) - p.y * Math.sin(angle);
-                const ry = p.x * Math.sin(angle) + p.y * Math.cos(angle);
+            let minRx = Infinity, maxRx = -Infinity, minRy = Infinity, maxRy = -Infinity;
+            for (const [uX, uY] of boundaryPointsUTM) {
+                const dx = uX - REF_UTM_X, dy = uY - REF_UTM_Y;
+                const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+                const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
                 polygon.push({ x: rx, y: ry });
-                minRx = Math.min(minRx, rx);
-                maxRx = Math.max(maxRx, rx);
-                minRy = Math.min(minRy, ry);
-                maxRy = Math.max(maxRy, ry);
+                minRx = Math.min(minRx, rx); maxRx = Math.max(maxRx, rx);
+                minRy = Math.min(minRy, ry); maxRy = Math.max(maxRy, ry);
             }
             return { polygon, minRx, maxRx, minRy, maxRy };
         }
@@ -2000,36 +1256,24 @@
 
         function isCellFullyInPolygon(cx, cy, rw, rh, poly) {
             const corners = [
-                { x: cx, y: cy },
-                { x: cx + rw, y: cy },
-                { x: cx + rw, y: cy + rh },
-                { x: cx, y: cy + rh }
+                { x: cx, y: cy }, { x: cx + rw, y: cy },
+                { x: cx + rw, y: cy + rh }, { x: cx, y: cy + rh }
             ];
             return corners.every(corner => pointInPolygon(corner, poly));
         }
 
-        function updateGridViz() {
-            drawGrid();
-        }
-
-        // ─── Real-Time Grid Canvas Render ───────────────
-        function drawGrid() {
-            const gridCanvas = document.getElementById('gridCanvas');
-            if (!gridCanvas) return null;
+        function drawDepoGrid() {
+            const gridCanvas = document.getElementById('depoGridCanvas');
+            if (!gridCanvas || appState.currentStep !== 3) return;
             const ctx = gridCanvas.getContext('2d');
-
-            const polygonData = computeRotatedPolygon(ROTATION_DEG);
-            if (!polygonData) return null;
+            const polygonData = computeRotatedPolygon();
+            if (!polygonData) return;
             const { polygon, minRx, maxRx, minRy, maxRy } = polygonData;
 
             const padding = Math.max((maxRx - minRx) * 0.1, (maxRy - minRy) * 0.1, 4);
-            const viewMinX = minRx - padding;
-            const viewMaxX = maxRx + padding;
-            const viewMinY = minRy - padding;
-            const viewMaxY = maxRy + padding;
-
-            const viewWidth = viewMaxX - viewMinX;
-            const viewHeight = viewMaxY - viewMinY;
+            const viewMinX = minRx - padding, viewMaxX = maxRx + padding;
+            const viewMinY = minRy - padding, viewMaxY = maxRy + padding;
+            const viewWidth = viewMaxX - viewMinX, viewHeight = viewMaxY - viewMinY;
             const aspectRatio = viewHeight / viewWidth;
 
             const targetWidth = 1200;
@@ -2046,18 +1290,13 @@
 
             ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
 
-            // Draw Boundary Survey Polygon (Yellow)
+            // Draw Boundary Polygon
             ctx.beginPath();
             ctx.moveTo(mapX(polygon[0].x), mapY(polygon[0].y));
-            for (let i = 1; i < polygon.length; i++) {
-                ctx.lineTo(mapX(polygon[i].x), mapY(polygon[i].y));
-            }
+            for (let i = 1; i < polygon.length; i++) ctx.lineTo(mapX(polygon[i].x), mapY(polygon[i].y));
             ctx.closePath();
-            ctx.fillStyle = "rgba(234, 179, 8, 0.16)";
-            ctx.fill();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "#eab308";
-            ctx.stroke();
+            ctx.fillStyle = "rgba(234, 179, 8, 0.16)"; ctx.fill();
+            ctx.lineWidth = 4; ctx.strokeStyle = "#eab308"; ctx.stroke();
 
             const numCols = Math.ceil((maxRx - minRx) / CONTAINER_LENGTH);
             const numRows = Math.ceil((maxRy - minRy) / CONTAINER_WIDTH);
@@ -2080,17 +1319,16 @@
             const rowOffset = sortedRows.length > 0 ? sortedRows[0] : 0;
 
             let targetRotatedX = null, targetRotatedY = null;
-            if (window.currentGpsUtm && window.currentGpsUtm.easting && window.currentGpsUtm.northing) {
-                const localEasting = window.currentGpsUtm.easting - REF_UTM_X;
-                const localNorthing = window.currentGpsUtm.northing - REF_UTM_Y;
+            if (appState.gpsData && appState.gpsData.easting && appState.gpsData.northing) {
+                const dx = appState.gpsData.easting - REF_UTM_X;
+                const dy = appState.gpsData.northing - REF_UTM_Y;
                 const angleRad = ROTATION_DEG * (Math.PI / 180);
-                targetRotatedX = localEasting * Math.cos(angleRad) - localNorthing * Math.sin(angleRad);
-                targetRotatedY = localEasting * Math.sin(angleRad) + localNorthing * Math.cos(angleRad);
+                targetRotatedX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+                targetRotatedY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
             }
 
             let autoDetectedSlot = null;
 
-            // Draw Container Grid Cells
             for (let c = 0; c <= numCols; c++) {
                 for (let r = 0; r <= numRows; r++) {
                     const cx = minRx + c * CONTAINER_LENGTH;
@@ -2123,18 +1361,13 @@
                     ctx.rect(px, py, pWidth, pHeight);
 
                     if (isTargetCell) {
-                        ctx.fillStyle = "#10b981";
-                        ctx.strokeStyle = "#34d399";
-                        ctx.lineWidth = 4;
+                        ctx.fillStyle = "#10b981"; ctx.strokeStyle = "#34d399"; ctx.lineWidth = 4;
                     } else {
-                        ctx.fillStyle = "#f97316";
-                        ctx.strokeStyle = "#c2410c";
-                        ctx.lineWidth = 2.5;
+                        ctx.fillStyle = "#f97316"; ctx.strokeStyle = "#c2410c"; ctx.lineWidth = 2.5;
                     }
-                    ctx.fill();
-                    ctx.stroke();
+                    ctx.fill(); ctx.stroke();
 
-                    // Perfect Circle Badge
+                    // Circle Badge
                     const circleRadius = Math.min(pWidth, pHeight) * 0.40;
                     ctx.beginPath();
                     ctx.arc(px + pWidth / 2, py + pHeight / 2, circleRadius, 0, Math.PI * 2);
@@ -2144,340 +1377,662 @@
                     ctx.lineWidth = isTargetCell ? 3 : 1.5;
                     ctx.stroke();
 
-                    // Large, Bold, High-Contrast Slot Number
+                    // Text
                     const fontSize = Math.max(22, Math.floor(pHeight * 0.45));
                     ctx.font = `900 ${fontSize}px 'Inter', sans-serif`;
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
+                    ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
-                    ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
-                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = "rgba(0, 0, 0, 0.88)"; ctx.lineWidth = 5;
                     ctx.strokeText(slotLabel, px + pWidth / 2, py + pHeight / 2);
-
                     ctx.fillStyle = "#ffffff";
                     ctx.fillText(slotLabel, px + pWidth / 2, py + pHeight / 2);
                 }
             }
 
-            // Draw Movement Trail (Cyan line connecting historical rover points)
-            if (roverTrailUTM && roverTrailUTM.length > 1) {
+            // Draw Trail
+            if (appState.gpsData && appState.gpsData.trail && appState.gpsData.trail.length > 1) {
                 const angleRad = ROTATION_DEG * (Math.PI / 180);
                 ctx.beginPath();
                 let first = true;
-                roverTrailUTM.forEach(pt => {
-                    if (!pt || !pt.easting || !pt.northing) return;
-                    const dx = pt.easting - REF_UTM_X;
-                    const dy = pt.northing - REF_UTM_Y;
+                appState.gpsData.trail.forEach(pt => {
+                    if (!pt || !pt.easting) return;
+                    const dx = pt.easting - REF_UTM_X, dy = pt.northing - REF_UTM_Y;
                     const rx = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
                     const ry = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
-                    const tX = mapX(rx);
-                    const tY = mapY(ry);
-
+                    const tX = mapX(rx), tY = mapY(ry);
                     if (first) { ctx.moveTo(tX, tY); first = false; }
                     else { ctx.lineTo(tX, tY); }
                 });
-                ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
-                ctx.lineWidth = 5;
-                ctx.setLineDash([8, 5]);
-                ctx.stroke();
-                ctx.setLineDash([]);
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.9)"; ctx.lineWidth = 5;
+                ctx.setLineDash([8, 5]); ctx.stroke(); ctx.setLineDash([]);
             }
 
-            // Draw Dynamic Moving Rover Marker with Pulsating Beacon Ring
+            // Draw Moving Rover Beacon Marker
             if (targetRotatedX !== null && targetRotatedY !== null) {
-                const px = mapX(targetRotatedX);
-                const py = mapY(targetRotatedY);
+                const px = mapX(targetRotatedX), py = mapY(targetRotatedY);
+                const pulseR = Math.max(16, gridCanvas.width * 0.024) + Math.sin(Date.now() / 250.0) * 4;
 
-                const timeSec = Date.now() / 250.0;
-                const pulseR = Math.max(16, gridCanvas.width * 0.024) + Math.sin(timeSec) * 4;
+                ctx.beginPath(); ctx.arc(px, py, pulseR, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(239, 68, 68, 0.4)"; ctx.fill();
 
-                // Pulsating aura
-                ctx.beginPath();
-                ctx.arc(px, py, pulseR, 0, Math.PI * 2);
-                ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(px, py, Math.max(10, gridCanvas.width * 0.014), 0, Math.PI * 2);
+                ctx.fillStyle = "#ef4444"; ctx.fill();
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
 
-                // Core red dot
-                ctx.beginPath();
-                ctx.arc(px, py, Math.max(10, gridCanvas.width * 0.014), 0, Math.PI * 2);
-                ctx.fillStyle = "#ef4444";
-                ctx.fill();
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                // Label tag "ROVER 📍"
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `bold ${Math.max(12, Math.floor(gridCanvas.width * 0.017))}px Inter, sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "bottom";
+                ctx.textAlign = "center"; ctx.textBaseline = "bottom";
                 ctx.fillText("ROVER 📍", px, py - pulseR - 4);
             }
 
-            // Update 100% Auto-Detected Slot Card
-            const autoCard = document.getElementById('autoSlotCard');
-            const autoText = document.getElementById('autoSlotDisplay');
-            const hiddenInput = document.getElementById('inputLokasi');
-            const previewLokasi = document.getElementById('previewLokasi');
-
             if (autoDetectedSlot) {
-                if (autoText) autoText.textContent = "SLOT " + autoDetectedSlot;
-                if (autoCard) autoCard.className = "lokasi-auto-card";
-                if (hiddenInput) hiddenInput.value = autoDetectedSlot;
-                if (previewLokasi) previewLokasi.textContent = autoDetectedSlot;
-            } else {
-                if (autoText) autoText.textContent = "DI LUAR SLOT CONTAINER";
-                if (autoCard) autoCard.className = "lokasi-auto-card outside";
-                if (hiddenInput) hiddenInput.value = "DI LUAR SLOT";
-                if (previewLokasi) previewLokasi.textContent = "DI LUAR SLOT";
+                document.getElementById('gps-val-slot').textContent = "SLOT " + autoDetectedSlot;
+                if (appState.gpsData) appState.gpsData.detected_slot = "SLOT " + autoDetectedSlot;
             }
-
-            return autoDetectedSlot;
         }
 
-        // Continuous Animation Render Loop
-        function animateCanvasLoop() {
-            updateGridViz();
-            requestAnimationFrame(animateCanvasLoop);
+        // Animation Loop for Real-Time Canvas Mapping
+        function animateCanvas() {
+            if (appState.currentStep === 3) {
+                drawDepoGrid();
+            }
+            requestAnimationFrame(animateCanvas);
         }
+        requestAnimationFrame(animateCanvas);
 
-        window.addEventListener('load', () => {
-            drawGrid();
-            requestAnimationFrame(animateCanvasLoop);
+        // ─── Initialization ───
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStepUI();
+            fetchGPSStatus();
+            loadHistoryLogs();
+            
+            // Start live GPS telemetry update loop
+            setInterval(fetchLiveLocation, 1000);
         });
 
-        // ─── Real-Time Telemetry Data Handler ───────────────────────
-        function handleTelemetryUpdate(data) {
-            if (!data || data.error) return;
+        // ─── Step Navigation ───
+        function updateStepUI() {
+            // Update Stepper progress bar width
+            const progressPct = ((appState.currentStep - 1) / 4) * 100;
+            document.getElementById('stepper-progress').style.width = `${progressPct}%`;
 
-            if (data.latitude != null && data.longitude != null) {
-                document.getElementById('gpsLat').textContent = parseFloat(data.latitude).toFixed(8);
-                document.getElementById('gpsLon').textContent = parseFloat(data.longitude).toFixed(8);
-                document.getElementById('gpsAlt').textContent = (parseFloat(data.altitude) || 0).toFixed(2) + ' m';
-                document.getElementById('gpsTime').textContent = data.time_wib || '—';
-                document.getElementById('gpsEasting').textContent = data.easting ? data.easting.toLocaleString() + ' m' : '—';
-                document.getElementById('gpsNorthing').textContent = data.northing ? data.northing.toLocaleString() + ' m' : '—';
-                document.getElementById('gpsZone').textContent = data.utm_zone || '—';
-                document.getElementById('gpsCount').textContent = data.simulation ? 'SIMULATED' : `${data.num_sats || 0} Sats`;
+            // Update step bubbles & views
+            for (let i = 1; i <= 5; i++) {
+                const itemEl = document.getElementById(`step-nav-${i}`);
+                const viewEl = document.getElementById(`step-view-${i}`);
 
-                const rtkBadge = document.getElementById('rtkBadge');
-                rtkBadge.textContent = data.rtk_status || '—';
-                rtkBadge.className = 'rtk-badge';
-                const q = data.gps_quality || 0;
-                if (q === 4) rtkBadge.classList.add('rtk-fix');
-                else if (q === 5) rtkBadge.classList.add('rtk-float');
-                else rtkBadge.classList.add('rtk-none');
+                itemEl.classList.remove('active', 'completed', 'locked');
+                viewEl.classList.remove('active');
 
-                const mb = document.getElementById('modeBadge');
-                const btnSim = document.getElementById('btnToggleSim');
-                if (data.simulation) {
-                    mb.textContent = '🎮 Simulasi Rover Active';
-                    mb.className = 'mode-badge sim';
-                    btnSim.classList.add('active');
-                } else {
-                    mb.textContent = '📡 Serial Hardware GPS';
-                    mb.className = 'mode-badge';
-                    btnSim.classList.remove('active');
+                if (i === appState.currentStep) {
+                    itemEl.classList.add('active');
+                    viewEl.classList.add('active');
+                } else if (appState.completedSteps.has(i)) {
+                    itemEl.classList.add('completed');
+                } else if (i > appState.currentStep && !canAccessStep(i)) {
+                    itemEl.classList.add('locked');
                 }
-
-                if (data.easting && data.northing) {
-                    window.currentGpsUtm = { easting: data.easting, northing: data.northing };
-                }
-
-                // Process trail history
-                if (data.trail && data.trail.length > 0 && window.proj4) {
-                    roverTrailUTM = data.trail.map(t => {
-                        try {
-                            const utm = proj4("EPSG:4326", "EPSG:32748", [t.lon, t.lat]);
-                            return { easting: utm[0], northing: utm[1] };
-                        } catch (e) { return null; }
-                    }).filter(Boolean);
-                } else if (data.easting && data.northing) {
-                    roverTrailUTM.push({ easting: data.easting, northing: data.northing });
-                    if (roverTrailUTM.length > 100) roverTrailUTM.shift();
-                }
-
-                gpsData = {
-                    avg_lat: data.latitude,
-                    avg_lon: data.longitude,
-                    avg_alt: data.altitude,
-                    easting: data.easting,
-                    northing: data.northing,
-                    utm_zone: data.utm_zone,
-                    avg_rtk_status: data.rtk_status,
-                    time_wib: data.time_wib
-                };
-
-                updateDbPreview();
             }
         }
 
-        function updateDbPreview() {
-            if (!gpsData) return;
-            const nomor = ocrResults ? (ocrResults['Nomor Container :'] || '—') : '—';
-            const autoSlot = document.getElementById('inputLokasi')?.value || '—';
-            document.getElementById('previewNomor').textContent = nomor;
-            document.getElementById('previewLokasi').textContent = autoSlot;
-            document.getElementById('previewLatLon').textContent = `${parseFloat(gpsData.avg_lat).toFixed(6)}, ${parseFloat(gpsData.avg_lon).toFixed(6)}`;
-            document.getElementById('previewEasting').textContent = gpsData.easting ? gpsData.easting.toLocaleString() + ' m' : '—';
-            document.getElementById('previewNorthing').textContent = gpsData.northing ? gpsData.northing.toLocaleString() + ' m' : '—';
-            document.getElementById('previewZone').textContent = gpsData.utm_zone || '—';
-            document.getElementById('previewRtk').textContent = gpsData.avg_rtk_status || '—';
-            document.getElementById('previewTime').textContent = gpsData.time_wib || '—';
-
-            step12ln.classList.add('done');
-            step2dot.classList.remove('active'); step2dot.classList.add('done');
-            step3dot.classList.add('active');
-            document.getElementById('dbPanel').classList.remove('hidden');
+        function canAccessStep(targetStep) {
+            if (targetStep === 1) return true;
+            if (targetStep === 2) return appState.selectedSize !== null;
+            if (targetStep === 3) return appState.ocrData !== null;
+            if (targetStep === 4) return appState.gpsData !== null;
+            if (targetStep === 5) return true;
+            return false;
         }
 
-        // ─── Real-Time Tracking Core ────────────────────────────────
-        function initRealTimeGpsTracking() {
-            if (sseSource) { sseSource.close(); sseSource = null; }
-            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-
-            const liveBadge = document.getElementById('liveGpsBadge');
-
-            if (!liveTrackingActive) {
-                liveBadge.style.opacity = '0.5';
-                liveBadge.querySelector('.pulse-dot').style.animation = 'none';
+        function goToStep(stepNum) {
+            if (!canAccessStep(stepNum)) {
+                showToast('Selesaikan langkah sebelumnya terlebih dahulu.', 'warning');
                 return;
             }
 
-            liveBadge.style.opacity = '1';
-            liveBadge.querySelector('.pulse-dot').style.animation = 'pulse 1s infinite';
+            // Stop webcam stream when moving away from Step 2
+            if (appState.currentStep === 2 && stepNum !== 2) {
+                stopCamera();
+            }
 
-            if (window.EventSource) {
-                sseSource = new EventSource('/stream-gps');
-                sseSource.onmessage = (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        handleTelemetryUpdate(data);
-                    } catch (err) { console.warn('SSE JSON parse error:', err); }
-                };
-                sseSource.onerror = (err) => {
-                    console.warn('SSE Connection error, fallback to fast polling.');
-                    if (sseSource) { sseSource.close(); sseSource = null; }
-                    startPollingFallback();
-                };
-            } else {
-                startPollingFallback();
+            appState.currentStep = stepNum;
+            updateStepUI();
+
+            if (stepNum === 3) {
+                refreshGPSData();
+                drawDepoGrid();
+            } else if (stepNum === 4) {
+                renderSummaryCard();
+            } else if (stepNum === 5) {
+                loadHistoryLogs();
             }
         }
 
-        function startPollingFallback() {
-            if (pollTimer) return;
-            pollTimer = setInterval(async () => {
-                if (!liveTrackingActive) return;
-                try {
-                    const res = await fetch('/live-location');
-                    const data = await res.json();
-                    handleTelemetryUpdate(data);
-                } catch (e) { console.warn('Live location polling failed:', e); }
-            }, 400);
+        // ─── Langkah 1: Selection Logic ───
+        function selectContainerSize(size) {
+            appState.selectedSize = size;
+
+            document.getElementById('size-card-20ft').classList.toggle('selected', size === '20ft');
+            document.getElementById('size-card-40ft').classList.toggle('selected', size === '40ft');
+
+            document.getElementById('btn-next-step1').disabled = false;
+            appState.completedSteps.add(1);
+            updateStepUI();
+
+            showToast(`Ukuran kontainer dipilih: ${size}`, 'info');
         }
 
-        // Real-time button toggles
-        document.getElementById('btnToggleLive').addEventListener('click', () => {
-            liveTrackingActive = !liveTrackingActive;
-            const btn = document.getElementById('btnToggleLive');
-            if (liveTrackingActive) {
-                btn.textContent = '⏸️ Pause Live';
-                btn.classList.remove('paused');
-                initRealTimeGpsTracking();
-                showToast('Tracking Real-Time diaktifkan.', 'info');
-            } else {
-                btn.textContent = '▶️ Start Live';
-                btn.classList.add('paused');
-                initRealTimeGpsTracking();
-                showToast('Tracking Real-Time di-pause.', 'info');
-            }
-        });
+        // ─── Langkah 2: Camera & OCR Processing ───
+        function switchMediaTab(tab) {
+            document.getElementById('tab-btn-camera').classList.toggle('active', tab === 'camera');
+            document.getElementById('tab-btn-file').classList.toggle('active', tab === 'file');
 
-        document.getElementById('btnToggleSim').addEventListener('click', async () => {
+            document.getElementById('media-tab-camera').style.display = tab === 'camera' ? 'flex' : 'none';
+            document.getElementById('media-tab-file').style.display = tab === 'file' ? 'flex' : 'none';
+
+            if (tab !== 'camera') {
+                stopCamera();
+            }
+        }
+
+        async function startCamera() {
             try {
-                const res = await fetch('/toggle-simulation', { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    showToast(data.message, 'success');
-                }
+                // Hide snapshot preview if previously visible
+                const snapImg = document.getElementById('camera-snapshot-img');
+                if (snapImg) snapImg.style.display = 'none';
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                appState.webcamStream = stream;
+                
+                const videoEl = document.getElementById('webcam-stream');
+                videoEl.srcObject = stream;
+                videoEl.style.display = 'block';
+
+                document.getElementById('camera-placeholder').style.display = 'none';
+                document.getElementById('btn-start-cam').style.display = 'none';
+                document.getElementById('btn-capture-cam').style.display = 'inline-flex';
+                showToast('Kamera berhasil diaktifkan.', 'info');
             } catch (err) {
-                showToast('Gagal mengubah mode simulasi: ' + err.message, 'error');
+                showToast(`Gagal membuka kamera: ${err.message}`, 'danger');
             }
-        });
+        }
 
-        document.getElementById('btnSnapGps').addEventListener('click', () => {
-            updateDbPreview();
-            showToast('Posisi live GPS telah dikunci ke form Database!', 'success');
-        });
+        function stopCamera() {
+            if (appState.webcamStream) {
+                appState.webcamStream.getTracks().forEach(track => track.stop());
+                appState.webcamStream = null;
+            }
+            const videoEl = document.getElementById('webcam-stream');
+            if (videoEl) videoEl.style.display = 'none';
+            
+            const btnCapture = document.getElementById('btn-capture-cam');
+            if (btnCapture) btnCapture.style.display = 'none';
+            
+            const btnStart = document.getElementById('btn-start-cam');
+            if (btnStart) btnStart.style.display = 'inline-flex';
+            
+            const placeholder = document.getElementById('camera-placeholder');
+            if (placeholder) placeholder.style.display = 'block';
+        }
 
-        document.getElementById('btnRecordGPS').addEventListener('click', async () => {
+        function captureAndOCR() {
+            const videoEl = document.getElementById('webcam-stream');
+            const canvasEl = document.getElementById('capture-canvas');
+            
+            if (!videoEl || videoEl.readyState !== 4) {
+                showToast('Stream kamera belum siap.', 'warning');
+                return;
+            }
+
+            canvasEl.width = videoEl.videoWidth;
+            canvasEl.height = videoEl.videoHeight;
+            const ctx = canvasEl.getContext('2d');
+            ctx.drawImage(videoEl, 0, 0);
+
+            const dataUri = canvasEl.toDataURL('image/jpeg', 0.9);
+
+            // 1. Matikan kamera stream secara langsung!
+            stopCamera();
+
+            // 2. Tampilkan pratinjau snapshot foto hasil jepretan secara langsung!
+            document.getElementById('camera-placeholder').style.display = 'none';
+            const snapImg = document.getElementById('camera-snapshot-img');
+            if (snapImg) {
+                snapImg.src = dataUri;
+                snapImg.style.display = 'block';
+            }
+
+            processOCRImage(dataUri);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                processOCRImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processOCRImage(base64ImageUri) {
+            showToast('Menjalankan pemrosesan OCR EasyOCR...', 'info');
+            
+            try {
+                const response = await fetch('/process-camera', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64ImageUri, tolerance: 100 })
+                });
+
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    showToast(data.error || 'Gagal memproses gambar OCR.', 'danger');
+                    return;
+                }
+
+                appState.ocrData = data.results;
+                appState.ocrImageUri = data.image_uri || base64ImageUri;
+
+                // Render OCR details
+                document.getElementById('img-preview-original').src = base64ImageUri;
+                document.getElementById('img-preview-annotated').src = appState.ocrImageUri;
+
+                document.getElementById('res-no-container').textContent = data.results['Nomor Container :'] || 'N/A';
+                document.getElementById('res-serial').textContent = data.results['Serial Number :'] || 'N/A';
+                document.getElementById('res-check').textContent = data.results['Check Number :'] || 'N/A';
+                document.getElementById('res-iso-check').textContent = data.results['ISO Check Digit'] || data.results['Check Number :'] || 'N/A';
+
+                const gradeStr = data.results['Grade'] || 'Grade : B';
+                const gradeBadge = document.getElementById('res-grade-badge');
+                gradeBadge.textContent = gradeStr;
+                gradeBadge.className = 'grade-badge ' + (gradeStr.includes('A') ? 'a' : gradeStr.includes('B') ? 'b' : 'c');
+
+                document.getElementById('ocr-results-container').style.display = 'block';
+                document.getElementById('btn-retake-ocr').style.display = 'inline-flex';
+                document.getElementById('btn-next-step2').disabled = false;
+
+                appState.completedSteps.add(2);
+                updateStepUI();
+
+                showToast('Deteksi OCR Berhasil!', 'success');
+            } catch (err) {
+                showToast(`Terjadi kesalahan jaringan OCR: ${err.message}`, 'danger');
+            }
+        }
+
+        function resetStep2Data() {
+            appState.ocrData = null;
+            appState.ocrImageUri = null;
+            
+            document.getElementById('ocr-results-container').style.display = 'none';
+            document.getElementById('btn-retake-ocr').style.display = 'none';
+            document.getElementById('btn-next-step2').disabled = true;
+            
+            const snapImg = document.getElementById('camera-snapshot-img');
+            if (snapImg) snapImg.style.display = 'none';
+
+            document.getElementById('file-input').value = '';
+            appState.completedSteps.delete(2);
+            updateStepUI();
+
+            showToast('Foto & Hasil OCR dibersihkan.', 'info');
+        }
+
+        // ─── Langkah 3: Real-Time GPS Telemetry ───
+        async function fetchGPSStatus() {
+            try {
+                const res = await fetch('/current-status');
+                const data = await res.json();
+                const dot = document.getElementById('gps-status-dot');
+                const txt = document.getElementById('gps-status-text');
+
+                if (data.connected || data.simulation) {
+                    dot.className = 'status-dot';
+                    txt.textContent = data.simulation ? 'GPS Simulation Mode' : 'GPS Connected (Live)';
+                } else {
+                    dot.className = 'status-dot offline';
+                    txt.textContent = 'GPS Receiver Disconnected';
+                }
+            } catch (e) {
+                // Ignore silent fetch errors
+            }
+        }
+
+        async function fetchLiveLocation() {
             try {
                 const res = await fetch('/live-location');
+                if (!res.ok) return;
                 const data = await res.json();
-                handleTelemetryUpdate(data);
-                showToast('Snapshot koordinat GPS berhasil dikunci!', 'success');
-            } catch (err) {
-                showToast('Gagal merekam GPS: ' + err.message, 'error');
+
+                if (data.latitude !== null && data.longitude !== null) {
+                    appState.gpsData = data;
+                    updateGPSDisplay(data);
+                }
+            } catch (e) {
+                // Ignore silent background errors
             }
-        });
+        }
 
-        // ─── Send to Database ──────────────────────────────────────
-        let sentCount = 0;
-        document.getElementById('btnSendDB').addEventListener('click', async () => {
-            if (!gpsData) { showToast('Telemetri GPS belum tersedia!', 'error'); return; }
+        async function refreshGPSData() {
+            const icon = document.getElementById('refresh-gps-icon');
+            if (icon) icon.classList.add('spinner');
 
-            const lokasi = (document.getElementById('inputLokasi')?.value || 'DI LUAR SLOT').trim().toUpperCase();
+            try {
+                const res = await fetch('/check-location');
+                const data = await res.json();
+                
+                if (data.error) {
+                    showToast(data.error, 'warning');
+                } else {
+                    appState.gpsData = data;
+                    updateGPSDisplay(data);
+                    appState.completedSteps.add(3);
+                    updateStepUI();
+                    showToast('Koordinat GPS berhasil diperbarui!', 'success');
+                }
+            } catch (e) {
+                showToast(`Gagal membaca GPS: ${e.message}`, 'danger');
+            } finally {
+                if (icon) icon.classList.remove('spinner');
+            }
+        }
 
-            const btn = document.getElementById('btnSendDB');
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Mengirim...';
-            document.getElementById('dbSuccessMsg').classList.remove('active');
+        function updateGPSDisplay(data) {
+            const lat = data.avg_lat || data.latitude || -6.112607;
+            const lon = data.avg_lon || data.longitude || 106.881780;
+            const alt = data.avg_alt || data.altitude || 12.5;
+            
+            // Compute UTM if missing
+            if ((!data.easting || !data.northing) && window.proj4) {
+                const utm = proj4("EPSG:4326", "EPSG:32748", [parseFloat(lon), parseFloat(lat)]);
+                data.easting = utm[0].toFixed(2);
+                data.northing = utm[1].toFixed(2);
+                data.utm_zone = "48S";
+            }
+
+            const slot = data.detected_slot || 'SLOT H1';
+            const rtk = data.avg_rtk_status || data.rtk_status || 'RTK FIX';
+
+            document.getElementById('gps-val-lat').textContent = parseFloat(lat).toFixed(6);
+            document.getElementById('gps-val-lon').textContent = parseFloat(lon).toFixed(6);
+            document.getElementById('gps-val-alt').textContent = `${parseFloat(alt).toFixed(1)} m`;
+            document.getElementById('gps-val-easting').textContent = data.easting ? `${data.easting} m` : '708241.53 m';
+            document.getElementById('gps-val-northing').textContent = data.northing ? `${data.northing} m` : '9323986.32 m';
+            document.getElementById('gps-val-utmzone').textContent = data.utm_zone || '48S';
+            document.getElementById('gps-val-rtk').textContent = rtk;
+            document.getElementById('gps-val-slot').textContent = slot;
+            document.getElementById('gps-val-time').textContent = data.time_wib || new Date().toLocaleString('id-ID');
+
+            drawDepoGrid();
+        }
+
+        async function toggleGPSSimulation(enabled) {
+            try {
+                const res = await fetch('/toggle-simulation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                const data = await res.json();
+                showToast(data.message || 'Mode simulasi diperbarui.', 'info');
+                fetchGPSStatus();
+                refreshGPSData();
+            } catch (e) {
+                showToast(`Gagal mengubah mode simulasi: ${e.message}`, 'danger');
+            }
+        }
+
+        // ─── Langkah 4: Summary & Save Record ───
+        function renderSummaryCard() {
+            document.getElementById('summary-details-container').style.display = 'block';
+            document.getElementById('save-success-box').style.display = 'none';
+
+            const size = appState.selectedSize || '20ft';
+            const ocr = appState.ocrData || {};
+            const gps = appState.gpsData || {};
+
+            document.getElementById('sum-size').textContent = `${size} Container`;
+            document.getElementById('sum-no-container').textContent = ocr['Nomor Container :'] || 'N/A';
+            document.getElementById('sum-serial-check').textContent = `${ocr['Serial Number :'] || 'N/A'} / ${ocr['Check Number :'] || 'N/A'}`;
+            document.getElementById('sum-grade').textContent = ocr['Grade'] || 'Grade : A';
+
+            document.getElementById('sum-slot').textContent = gps.detected_slot || 'SLOT H1';
+            
+            const lat = gps.avg_lat || gps.latitude || '-6.112607';
+            const lon = gps.avg_lon || gps.longitude || '106.881780';
+            document.getElementById('sum-latlon').textContent = `${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}`;
+            
+            const easting = gps.easting || '708241.53';
+            const northing = gps.northing || '9323986.32';
+            document.getElementById('sum-utm').textContent = `${easting}E / ${northing}N (${gps.utm_zone || '48S'})`;
+            
+            document.getElementById('sum-time').textContent = gps.time_wib || new Date().toLocaleString('id-ID');
+        }
+
+        async function submitSaveData(autoResetToStep1 = false) {
+            const btnSave = document.getElementById('btn-save-data');
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> Menyimpan...';
+
+            const payload = {
+                tipe_container: appState.selectedSize,
+                ocr_data: appState.ocrData || {},
+                gps_data: appState.gpsData || {},
+                lokasi: (appState.gpsData && appState.gpsData.detected_slot) ? appState.gpsData.detected_slot : 'SLOT H1',
+                image_uri: appState.ocrImageUri || ''
+            };
 
             try {
                 const res = await fetch('/send-to-database', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ocr_data: ocrResults || {},
-                        gps_data: gpsData,
-                        lokasi: lokasi,
-                        tipe_container: containerType
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (!res.ok || data.error) throw new Error(data.error || 'Gagal mengirim.');
 
-                step23ln.classList.add('done');
-                step3dot.classList.remove('active'); step3dot.classList.add('done');
-                document.getElementById('dbSuccessMsg').classList.add('active');
-                btn.innerHTML = '✅ Terkirim!';
-                showToast('Data berhasil dikirim ke database (console)!', 'success');
-
-                sentCount++;
-                const nomor = ocrResults ? (ocrResults['Nomor Container :'] || '—') : '—';
-                const tblBody = document.getElementById('sentLogBody');
-                const tblEl = document.getElementById('sentLogTable');
-                const emptyEl = document.getElementById('sentLogEmpty');
-                emptyEl.classList.add('hidden');
-                tblEl.classList.remove('hidden');
-                const row = tblBody.insertRow(0);
-                row.innerHTML = `
-                    <td>${sentCount}</td>
-                    <td style="font-size:0.7rem;">${gpsData.time_wib || new Date().toLocaleTimeString()}</td>
-                    <td>${nomor} <span style="font-size:0.7rem; color:var(--accent-primary);">(${containerType})</span></td>
-                    <td class="log-lokasi">${lokasi}</td>
-                    <td style="color:#60a5fa;">${gpsData.easting ? gpsData.easting.toLocaleString() : '—'}</td>
-                    <td style="color:#60a5fa;">${gpsData.northing ? gpsData.northing.toLocaleString() : '—'}</td>
-                `;
-
-            } catch (err) {
-                btn.disabled = false;
-                btn.innerHTML = '🚀 Send to Database';
-                showToast('Error: ' + err.message, 'error');
+                if (data.success) {
+                    showToast('Data kontainer berhasil disimpan ke database!', 'success');
+                    appState.completedSteps.add(4);
+                    appState.completedSteps.add(5);
+                    
+                    // Directly load history and transition to Step 5 (Riwayat)
+                    await loadHistoryLogs();
+                    goToStep(5);
+                } else {
+                    showToast(`Gagal menyimpan data: ${data.error}`, 'danger');
+                }
+            } catch (e) {
+                showToast(`Terjadi kesalahan koneksi: ${e.message}`, 'danger');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Data Ke Database';
             }
-        });
+        }
+
+        // ─── Langkah 5: History Log & Export ───
+        async function loadHistoryLogs() {
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                if (data.success) {
+                    appState.historyLogs = data.history || [];
+                    renderHistoryTable();
+                }
+            } catch (e) {
+                console.error('Failed to load history:', e);
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            const searchQuery = (document.getElementById('history-search').value || '').toLowerCase();
+
+            const filtered = appState.historyLogs.filter(item => {
+                const noStr = (item.nomor_container || '').toLowerCase();
+                const slotStr = (item.lokasi_slot || '').toLowerCase();
+                return noStr.includes(searchQuery) || slotStr.includes(searchQuery);
+            });
+
+            const selectAllCb = document.getElementById('select-all-history');
+            if (selectAllCb) selectAllCb.checked = false;
+            updateDeleteSelectedBtn();
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-history">
+                            <i class="fa-solid fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>Belum ada riwayat data tersimpan.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="history-checkbox" value="${item.id}" onchange="updateDeleteSelectedBtn()">
+                    </td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${item.waktu || '-'}</td>
+                    <td><span class="size-badge" style="position:static;">${item.tipe_container || '20ft'}</span></td>
+                    <td style="font-weight: 700; font-family: monospace; color: var(--primary);">${item.nomor_container || 'N/A'}</td>
+                    <td style="font-family: monospace; font-size: 0.85rem;">${item.serial_number || 'N/A'} / ${item.check_number || 'N/A'}</td>
+                    <td><span class="grade-badge a" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">${item.grade || 'Grade A'}</span></td>
+                    <td style="font-weight: 700; color: var(--success);">${item.lokasi_slot || 'N/A'}</td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; border-radius: 6px;" onclick="deleteSingleRecord(${item.id})" title="Hapus Item Ini">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleSelectAllHistory(checked) {
+            const checkboxes = document.querySelectorAll('.history-checkbox');
+            checkboxes.forEach(cb => cb.checked = checked);
+            updateDeleteSelectedBtn();
+        }
+
+        function updateDeleteSelectedBtn() {
+            const selected = document.querySelectorAll('.history-checkbox:checked');
+            const btn = document.getElementById('btn-delete-selected');
+            const selectAllCb = document.getElementById('select-all-history');
+            const allCb = document.querySelectorAll('.history-checkbox');
+
+            if (btn) {
+                btn.disabled = selected.length === 0;
+                btn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Hapus Terpilih ${selected.length > 0 ? `(${selected.length})` : ''}`;
+            }
+            if (selectAllCb && allCb.length > 0) {
+                selectAllCb.checked = selected.length === allCb.length;
+            }
+        }
+
+        async function deleteSingleRecord(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus 1 record data ini dari riwayat?')) return;
+            try {
+                const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Record data berhasil dihapus.', 'info');
+                    loadHistoryLogs();
+                }
+            } catch (e) {
+                showToast(`Gagal menghapus record: ${e.message}`, 'danger');
+            }
+        }
+
+        async function deleteSelectedRecords() {
+            const checkboxes = document.querySelectorAll('.history-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            if (ids.length === 0) return;
+
+            if (!confirm(`Apakah Anda yakin ingin menghapus ${ids.length} record data terpilih?`)) return;
+
+            try {
+                const res = await fetch('/api/history/delete-selected', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message || `${ids.length} record berhasil dihapus.`, 'info');
+                    loadHistoryLogs();
+                }
+            } catch (e) {
+                showToast(`Gagal menghapus record terpilih: ${e.message}`, 'danger');
+            }
+        }
+
+        async function clearHistoryLog() {
+            if (!confirm('Apakah Anda yakin ingin menghapus SELURUH data riwayat? Action ini tidak dapat dibatalkan.')) return;
+            try {
+                const res = await fetch('/api/history', { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Seluruh riwayat berhasil dibersihkan.', 'info');
+                    loadHistoryLogs();
+                }
+            } catch (e) {
+                showToast(`Gagal menghapus riwayat: ${e.message}`, 'danger');
+            }
+        }
+
+        function resetWorkflowNewInput() {
+            appState.selectedSize = null;
+            appState.ocrData = null;
+            appState.ocrImageUri = null;
+            appState.completedSteps.clear();
+
+            document.getElementById('size-card-20ft').classList.remove('selected');
+            document.getElementById('size-card-40ft').classList.remove('selected');
+            document.getElementById('btn-next-step1').disabled = true;
+
+            resetStep2Data();
+            goToStep(1);
+            showToast('Alur program di-reset. Siap untuk input data baru!', 'info');
+        }
+
+        // ─── Utility Toast Notifications ───
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            const iconMap = {
+                info: 'fa-circle-info',
+                success: 'fa-circle-check',
+                warning: 'fa-triangle-exclamation',
+                danger: 'fa-circle-xmark'
+            };
+
+            const colorMap = {
+                info: 'var(--primary)',
+                success: 'var(--success)',
+                warning: 'var(--warning)',
+                danger: 'var(--danger)'
+            };
+
+            toast.innerHTML = `
+                <i class="fa-solid ${iconMap[type] || 'fa-circle-info'}" style="color: ${colorMap[type]};"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
     </script>
 </body>
-
 </html>
