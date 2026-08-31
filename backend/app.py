@@ -10,25 +10,25 @@ from flask import Flask, request, render_template, jsonify, Response
 from datetime import datetime, timedelta, timezone
 
 # Import OCR pipeline
-from ocr_engine import process_pipeline
+from core.ocr_engine import process_pipeline
 
 # Import GPS modules (copied from apk_deteksi_container)
 try:
-    import gps_reader
-    import parsing as gps_parsing
+    from core import gps_reader
+    from core import parsing as gps_parsing
     GPS_AVAILABLE = True
 except ImportError:
     GPS_AVAILABLE = False
     print("[WARN] gps_reader / parsing modules not found. GPS features disabled.")
 
 try:
-    import counter
+    from utils import counter
     COUNTER_AVAILABLE = True
 except ImportError:
     COUNTER_AVAILABLE = False
     print("[WARN] counter module not found.")
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../frontend/templates')
 
 # ─────────────────────────────────────────────
 # UTM Conversion Helper (WGS84, no external lib)
@@ -425,7 +425,7 @@ def check_location():
         return jsonify({'error': str(e)}), 500
 
 
-HISTORY_FILE = os.path.join(os.path.dirname(__file__), "data_history.json")
+HISTORY_FILE = os.path.join(os.path.dirname(__file__), "data", "data_history.json")
 
 def load_history():
     if not os.path.exists(HISTORY_FILE):

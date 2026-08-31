@@ -11,7 +11,7 @@ import math
 import pynmea2
 import serial
 from typing import Optional
-from parsing import get_rtk_status, SERIAL_PORT, BAUDRATE
+from .parsing import get_rtk_status, SERIAL_PORT, BAUDRATE
 
 # ──────────────────────────────────────────────
 # Buffer & Deque untuk Telemetri Real-Time

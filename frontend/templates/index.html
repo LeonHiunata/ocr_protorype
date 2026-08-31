@@ -13,33 +13,60 @@
     
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(21, 30, 49, 0.7);
-            --card-solid: #151e31;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-active: rgba(59, 130, 246, 0.5);
+            /* SPIL Base Colors (Constant across themes) */
+            --primary: #c8102e;
+            --primary-hover: #a30d25;
+            --primary-light: rgba(200, 16, 46, 0.15);
             
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --primary-light: rgba(59, 130, 246, 0.15);
-            
-            --success: #10b981;
-            --success-hover: #059669;
-            --success-light: rgba(16, 185, 129, 0.15);
+            --success: #3a9542;
+            --success-hover: #2e7735;
+            --success-light: rgba(58, 149, 66, 0.15);
             
             --warning: #f59e0b;
-            --danger: #ef4444;
+            --danger: #c8102e;
             --purple: #8b5cf6;
-            
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --text-dim: #64748b;
             
             --radius-sm: 8px;
             --radius-md: 14px;
             --radius-lg: 20px;
             
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Dark Theme (Default) Variables */
+            --bg-color: #0b0f19;
+            --body-bg: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%);
+            --card-bg: rgba(21, 30, 49, 0.7);
+            --card-solid: #151e31;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(200, 16, 46, 0.5);
+            
+            --text-main: #ffffff;
+            --text-muted: #e2e8f0;
+            --text-dim: #94a3b8;
+            --input-bg: rgba(0, 0, 0, 0.2);
+            --header-bg: var(--success);
+            --shadow: 0 4px 14px rgba(200, 16, 46, 0.35);
+            --overlay-bg: rgba(255, 255, 255, 0.06);
+            --overlay-hover: rgba(255, 255, 255, 0.12);
+        }
+
+        body.light-theme {
+            /* Light Theme Variables */
+            --bg-color: #f3f4f6;
+            --body-bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --card-solid: #ffffff;
+            --border-color: #e5e7eb;
+            --border-active: rgba(200, 16, 46, 0.5);
+            
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-dim: #9ca3af;
+            --input-bg: #f9fafb;
+            --header-bg: var(--success);
+            --shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            --overlay-bg: rgba(0, 0, 0, 0.05);
+            --overlay-hover: rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -51,7 +78,7 @@
         body {
             width: 100%;
             min-height: 100vh;
-            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%);
+            background: var(--body-bg);
             color: var(--text-main);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             line-height: 1.5;
@@ -62,7 +89,7 @@
         header {
             width: 100%;
             padding: 1.1rem 2rem;
-            background: rgba(11, 15, 25, 0.85);
+            background: var(--header-bg);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
@@ -83,37 +110,46 @@
             width: 42px;
             height: 42px;
             border-radius: var(--radius-md);
-            background: linear-gradient(135deg, var(--primary), var(--purple));
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            color: var(--primary);
         }
 
         .brand-text h1 {
             font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: -0.3px;
-            background: linear-gradient(to right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ffffff;
         }
 
         .brand-text p {
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .server-status {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
             padding: 0.4rem 0.8rem;
             border-radius: 20px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             font-size: 0.8rem;
+            color: #ffffff;
+        }
+
+        #theme-toggle {
+            background: rgba(0, 0, 0, 0.2) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        #theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.3) !important;
         }
 
         .status-dot {
@@ -167,7 +203,7 @@
             width: 38px;
             height: 38px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--overlay-bg);
             border: 2px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -191,7 +227,7 @@
             background: var(--primary);
             border-color: var(--primary);
             color: #fff;
-            box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 16px var(--primary-light);
             transform: scale(1.1);
         }
         .step-item.active .step-label {
@@ -220,7 +256,7 @@
             left: 8%;
             right: 8%;
             height: 3px;
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--overlay-bg);
             z-index: 1;
         }
         .stepper-progress {
@@ -290,7 +326,7 @@
         .btn-primary {
             background: var(--primary);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 14px rgba(200, 16, 46, 0.3);
         }
         .btn-primary:hover:not(:disabled) {
             background: var(--primary-hover);
@@ -300,7 +336,7 @@
         .btn-success {
             background: var(--success);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 14px rgba(58, 149, 66, 0.3);
         }
         .btn-success:hover:not(:disabled) {
             background: var(--success-hover);
@@ -308,21 +344,21 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.07);
+            background: var(--overlay-bg);
             color: var(--text-main);
             border: 1px solid var(--border-color);
         }
         .btn-secondary:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.12);
+            background: var(--overlay-hover);
         }
 
         .btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(200, 16, 46, 0.3);
         }
         .btn-danger:hover:not(:disabled) {
-            background: rgba(239, 68, 68, 0.25);
+            background: rgba(200, 16, 46, 0.25);
         }
 
         .btn:disabled {
@@ -514,7 +550,7 @@
         }
 
         .ocr-results-box {
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 1.25rem;
@@ -526,7 +562,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--overlay-bg);
         }
         .ocr-field-row:last-child {
             border-bottom: none;
@@ -543,15 +579,31 @@
             color: var(--text-main);
         }
 
+        input.field-val {
+            background: var(--overlay-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.2rem 0.5rem;
+            text-align: right;
+            width: 120px;
+            transition: border-color 0.3s;
+            color: var(--text-main);
+        }
+
+        input.field-val:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
         .grade-badge {
             padding: 0.25rem 0.75rem;
             border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 700;
         }
-        .grade-badge.a { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success); }
+        .grade-badge.a { background: rgba(58, 149, 66, 0.2); color: #3a9542; border: 1px solid var(--success); }
         .grade-badge.b { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning); }
-        .grade-badge.c { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--danger); }
+        .grade-badge.c { background: rgba(200, 16, 46, 0.2); color: #c8102e; border: 1px solid var(--danger); }
 
         /* ─── Step 3: GPS Telemetry ─── */
         .gps-grid {
@@ -614,7 +666,7 @@
 
         /* ─── Step 4: Summary Card ─── */
         .summary-card {
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 1.5rem;
@@ -624,7 +676,7 @@
         .summary-section {
             margin-bottom: 1.25rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid var(--overlay-bg);
         }
         .summary-section:last-child {
             border-bottom: none;
@@ -661,11 +713,11 @@
         }
 
         .search-input {
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 0.6rem 1rem;
-            color: #fff;
+            color: var(--text-main);
             font-size: 0.85rem;
             width: 240px;
         }
@@ -688,7 +740,7 @@
         }
 
         .history-table th {
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--overlay-bg);
             padding: 0.75rem 1rem;
             color: var(--text-muted);
             font-weight: 600;
@@ -697,11 +749,11 @@
 
         .history-table td {
             padding: 0.75rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid var(--overlay-bg);
         }
 
         .history-table tr:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: var(--overlay-hover);
         }
 
         .empty-history {
@@ -727,7 +779,7 @@
             padding: 0.85rem 1.25rem;
             border-radius: var(--radius-md);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            color: #fff;
+            color: var(--text-main);
             font-size: 0.85rem;
             display: flex;
             align-items: center;
@@ -748,7 +800,7 @@
         }
     </style>
 </head>
-<body>
+<body class="light-theme">
 
     <!-- ─── Header ─── -->
     <header>
@@ -761,9 +813,14 @@
                 <p>Inspection & Yard Positioning Workflow</p>
             </div>
         </div>
-        <div class="server-status">
-            <div class="status-dot" id="gps-status-dot"></div>
-            <span id="gps-status-text">GPS Module Ready</span>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="server-status">
+                <div class="status-dot" id="gps-status-dot"></div>
+                <span id="gps-status-text">GPS Module Ready</span>
+            </div>
+            <button class="btn btn-secondary" id="theme-toggle" onclick="toggleTheme()" style="padding: 0.4rem 0.8rem; border-radius: 20px;" title="Toggle Dark/Light Mode">
+                <i class="fa-solid fa-sun" id="theme-icon"></i>
+            </button>
         </div>
     </header>
 
@@ -903,15 +960,11 @@
                     </div>
                     <div class="ocr-field-row">
                         <span class="field-label">Serial Number :</span>
-                        <span class="field-val" id="res-serial">-</span>
+                        <input type="text" class="field-val" id="res-serial" value="-" oninput="updateContainerNumber()">
                     </div>
                     <div class="ocr-field-row">
                         <span class="field-label">Check Number :</span>
-                        <span class="field-val" id="res-check">-</span>
-                    </div>
-                    <div class="ocr-field-row">
-                        <span class="field-label">ISO Check Digit :</span>
-                        <span class="field-val" id="res-iso-check">-</span>
+                        <input type="text" class="field-val" id="res-check" value="-" oninput="updateContainerNumber()">
                     </div>
                     <div class="ocr-field-row">
                         <span class="field-label">Grade Kualitas OCR :</span>
@@ -943,7 +996,7 @@
             </div>
 
             <!-- Card Visualisasi Mapping Canvas Grid Depo -->
-            <div class="map-card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+            <div class="map-card" style="background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
@@ -953,12 +1006,12 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
                         <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #eab308; display: inline-block; border-radius: 2px;"></span> Area Depo</span>
-                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #10b981; display: inline-block; border-radius: 2px;"></span> Slot Terdeteksi</span>
-                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #ef4444; display: inline-block; border-radius: 50%;"></span> Rover 📍</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #3a9542; display: inline-block; border-radius: 2px;"></span> Slot Terdeteksi</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #c8102e; display: inline-block; border-radius: 50%;"></span> Rover 📍</span>
                     </div>
                 </div>
                 <div style="position: relative; width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: #050811; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
-                    <canvas id="depoGridCanvas" style="width: 100%; height: auto; max-height: 440px; display: block;"></canvas>
+                    <canvas id="depoGridCanvas" style="width: 100%; height: 440px; object-fit: contain; display: block;"></canvas>
                 </div>
             </div>
 
@@ -1099,7 +1152,7 @@
             <!-- Save Success Box with Direct Button back to Step 1 -->
             <div id="save-success-box" style="display:none; background: rgba(16, 185, 129, 0.12); border: 2px solid var(--success); border-radius: var(--radius-md); padding: 2rem; text-align: center; margin-top: 1rem;">
                 <i class="fa-solid fa-circle-check" style="font-size: 3rem; color: var(--success); margin-bottom: 0.75rem;"></i>
-                <h3 style="color: #34d399; font-weight: 800; font-size: 1.4rem;">Data Kontainer Berhasil Disimpan!</h3>
+                <h3 style="color: #3a9542; font-weight: 800; font-size: 1.4rem;">Data Kontainer Berhasil Disimpan!</h3>
                 <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">Data inspeksi telah dicatat secara persisten ke database depo.</p>
                 
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.75rem; flex-wrap: wrap;">
@@ -1126,7 +1179,7 @@
                 
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <a href="/api/export/xlsx" class="btn btn-secondary" style="font-size: 0.8rem;">
-                        <i class="fa-solid fa-file-excel" style="color: #34d399;"></i> Ekspor Excel (XLSX)
+                        <i class="fa-solid fa-file-excel" style="color: #3a9542;"></i> Ekspor Excel (XLSX)
                     </a>
                     <a href="/api/export/csv" class="btn btn-secondary" style="font-size: 0.8rem;">
                         <i class="fa-solid fa-file-csv" style="color: var(--success);"></i> Ekspor CSV
@@ -1137,7 +1190,7 @@
                     <button class="btn btn-danger" id="btn-delete-selected" disabled style="font-size: 0.8rem;" onclick="deleteSelectedRecords()">
                         <i class="fa-solid fa-trash-can"></i> Hapus Terpilih
                     </button>
-                    <button class="btn btn-secondary" style="font-size: 0.8rem; color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="clearHistoryLog()">
+                    <button class="btn btn-secondary" style="font-size: 0.8rem; color: #c8102e; border-color: rgba(200, 16, 46, 0.3);" onclick="clearHistoryLog()">
                         <i class="fa-solid fa-dumpster"></i> Hapus Semua Log
                     </button>
                 </div>
@@ -1165,9 +1218,8 @@
                 </table>
             </div>
 
-            <div class="actions-footer">
-                <div></div>
-                <button class="btn btn-primary" onclick="resetWorkflowNewInput()">
+            <div style="display: flex; justify-content: center; margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="resetWorkflowNewInput()" style="width: 100%; max-width: 500px; padding: 1rem; font-size: 1.1rem;">
                     <i class="fa-solid fa-circle-plus"></i> Input Data Baru (Reset Alur)
                 </button>
             </div>
@@ -1188,7 +1240,8 @@
             ocrImageUri: null,
             gpsData: null,
             webcamStream: null,
-            historyLogs: []
+            historyLogs: [],
+            isFinished: false
         };
 
         // ─── Real-Time Depo Mapping Canvas Engine ───
@@ -1361,7 +1414,7 @@
                     ctx.rect(px, py, pWidth, pHeight);
 
                     if (isTargetCell) {
-                        ctx.fillStyle = "#10b981"; ctx.strokeStyle = "#34d399"; ctx.lineWidth = 4;
+                        ctx.fillStyle = "#3a9542"; ctx.strokeStyle = "#4dc257"; ctx.lineWidth = 4;
                     } else {
                         ctx.fillStyle = "#f97316"; ctx.strokeStyle = "#c2410c"; ctx.lineWidth = 2.5;
                     }
@@ -1371,9 +1424,9 @@
                     const circleRadius = Math.min(pWidth, pHeight) * 0.40;
                     ctx.beginPath();
                     ctx.arc(px + pWidth / 2, py + pHeight / 2, circleRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = isTargetCell ? "#059669" : "rgba(255, 255, 255, 0.22)";
+                    ctx.fillStyle = isTargetCell ? "#2e7735" : "rgba(255, 255, 255, 0.22)";
                     ctx.fill();
-                    ctx.strokeStyle = isTargetCell ? "#34d399" : "rgba(255, 255, 255, 0.6)";
+                    ctx.strokeStyle = isTargetCell ? "#4dc257" : "rgba(255, 255, 255, 0.6)";
                     ctx.lineWidth = isTargetCell ? 3 : 1.5;
                     ctx.stroke();
 
@@ -1416,7 +1469,7 @@
                 ctx.fillStyle = "rgba(239, 68, 68, 0.4)"; ctx.fill();
 
                 ctx.beginPath(); ctx.arc(px, py, Math.max(10, gridCanvas.width * 0.014), 0, Math.PI * 2);
-                ctx.fillStyle = "#ef4444"; ctx.fill();
+                ctx.fillStyle = "#c8102e"; ctx.fill();
                 ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
 
                 ctx.fillStyle = "#ffffff";
@@ -1440,8 +1493,36 @@
         }
         requestAnimationFrame(animateCanvas);
 
+        // ─── Theme Management ───
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                if (icon) icon.className = 'fa-solid fa-moon';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-theme');
+                if (icon) icon.className = 'fa-solid fa-sun';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const icon = document.getElementById('theme-icon');
+            if (savedTheme === 'dark') {
+                document.body.classList.remove('light-theme');
+                if (icon) icon.className = 'fa-solid fa-moon';
+            } else {
+                document.body.classList.add('light-theme');
+                if (icon) icon.className = 'fa-solid fa-sun';
+            }
+        }
+
         // ─── Initialization ───
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             updateStepUI();
             fetchGPSStatus();
             loadHistoryLogs();
@@ -1467,15 +1548,17 @@
                 if (i === appState.currentStep) {
                     itemEl.classList.add('active');
                     viewEl.classList.add('active');
+                } else if (!canAccessStep(i)) {
+                    itemEl.classList.add('locked');
                 } else if (appState.completedSteps.has(i)) {
                     itemEl.classList.add('completed');
-                } else if (i > appState.currentStep && !canAccessStep(i)) {
-                    itemEl.classList.add('locked');
                 }
             }
         }
 
         function canAccessStep(targetStep) {
+            if (appState.isFinished && targetStep !== 5) return false;
+
             if (targetStep === 1) return true;
             if (targetStep === 2) return appState.selectedSize !== null;
             if (targetStep === 3) return appState.ocrData !== null;
@@ -1641,10 +1724,9 @@
                 document.getElementById('img-preview-original').src = base64ImageUri;
                 document.getElementById('img-preview-annotated').src = appState.ocrImageUri;
 
-                document.getElementById('res-no-container').textContent = data.results['Nomor Container :'] || 'N/A';
-                document.getElementById('res-serial').textContent = data.results['Serial Number :'] || 'N/A';
-                document.getElementById('res-check').textContent = data.results['Check Number :'] || 'N/A';
-                document.getElementById('res-iso-check').textContent = data.results['ISO Check Digit'] || data.results['Check Number :'] || 'N/A';
+                document.getElementById('res-serial').value = data.results['Serial Number :'] || '';
+                document.getElementById('res-check').value = data.results['Check Number :'] || '';
+                updateContainerNumber();
 
                 const gradeStr = data.results['Grade'] || 'Grade : B';
                 const gradeBadge = document.getElementById('res-grade-badge');
@@ -1661,6 +1743,41 @@
                 showToast('Deteksi OCR Berhasil!', 'success');
             } catch (err) {
                 showToast(`Terjadi kesalahan jaringan OCR: ${err.message}`, 'danger');
+            }
+        }
+
+        function updateContainerNumber() {
+            const serialInput = document.getElementById('res-serial');
+            const checkInput = document.getElementById('res-check');
+            const containerDisplay = document.getElementById('res-no-container');
+            
+            let serialStr = serialInput.value.trim();
+            if (serialStr === '-' || serialStr === 'N/A') serialStr = '';
+            let checkStr = checkInput.value.trim();
+            if (checkStr === '-' || checkStr === 'N/A') checkStr = '';
+            
+            const newContainerNumber = "SPNU" + serialStr + checkStr;
+            containerDisplay.textContent = newContainerNumber;
+
+            // Calculate Adaptive Grade
+            let gradeStr = 'Grade : Unknown';
+            if (serialStr.length >= 2) {
+                const prefixInt = parseInt(serialStr.substring(0, 2), 10);
+                if (!isNaN(prefixInt)) {
+                    gradeStr = prefixInt < 30 ? 'Grade : B' : 'Grade : A';
+                }
+            }
+            const gradeBadge = document.getElementById('res-grade-badge');
+            if (gradeBadge) {
+                gradeBadge.textContent = gradeStr;
+                gradeBadge.className = 'grade-badge ' + (gradeStr.includes('A') ? 'a' : gradeStr.includes('B') ? 'b' : 'c');
+            }
+            
+            if (appState.ocrData) {
+                appState.ocrData['Nomor Container :'] = newContainerNumber;
+                appState.ocrData['Serial Number :'] = serialStr;
+                appState.ocrData['Check Number :'] = checkStr;
+                appState.ocrData['Grade'] = gradeStr;
             }
         }
 
@@ -1836,6 +1953,7 @@
 
                 if (data.success) {
                     showToast('Data kontainer berhasil disimpan ke database!', 'success');
+                    appState.isFinished = true;
                     appState.completedSteps.add(4);
                     appState.completedSteps.add(5);
                     
@@ -1986,6 +2104,7 @@
         }
 
         function resetWorkflowNewInput() {
+            appState.isFinished = false;
             appState.selectedSize = null;
             appState.ocrData = null;
             appState.ocrImageUri = null;
@@ -2014,7 +2133,7 @@
             };
 
             const colorMap = {
-                info: 'var(--primary)',
+                info: 'var(--success)',
                 success: 'var(--success)',
                 warning: 'var(--warning)',
                 danger: 'var(--danger)'

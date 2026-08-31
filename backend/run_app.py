@@ -1,5 +1,5 @@
 import streamlit as st
-from ocr_engine import process_pipeline
+from core.ocr_engine import process_pipeline
 
 st.set_page_config(page_title="Container OCR App", page_icon="🚢", layout="wide")
 
