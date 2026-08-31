@@ -425,10 +425,30 @@ def check_location():
         return jsonify({'error': str(e)}), 500
 
 
+HISTORY_FILE = os.path.join(os.path.dirname(__file__), "data_history.json")
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[WARN] Failed to read history file: {e}")
+        return []
+
+def save_history(data):
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[WARN] Failed to save history file: {e}")
+
+
 @app.route('/send-to-database', methods=['POST'])
 def send_to_database():
     """
-    Placeholder endpoint: menerima data gabungan OCR + GPS dan mencetak ke console.
+    Endpoint menerima data gabungan OCR + GPS, menyimpan ke file history JSON, dan log console.
     """
     try:
         payload = request.get_json(force=True)
@@ -436,32 +456,137 @@ def send_to_database():
         gps_data  = payload.get('gps_data', {})
         lokasi    = payload.get('lokasi', 'N/A')
         tipe_container = payload.get('tipe_container', 'N/A')
+        image_uri = payload.get('image_uri', '')
+
+        now_wib = datetime.now(timezone.utc).astimezone(
+            timezone(timedelta(hours=7))
+        ).strftime('%Y-%m-%d %H:%M:%S WIB')
+
+        record = {
+            'id': int(time.time() * 1000),
+            'tipe_container': tipe_container,
+            'nomor_container': ocr_data.get('Nomor Container :', 'N/A'),
+            'serial_number': ocr_data.get('Serial Number :', 'N/A'),
+            'check_number': ocr_data.get('Check Number :', 'N/A'),
+            'grade': ocr_data.get('Grade', 'N/A'),
+            'lokasi_slot': lokasi,
+            'waktu': gps_data.get('time_wib') or now_wib,
+            'image_uri': image_uri
+        }
+
+        history = load_history()
+        history.insert(0, record)
+        save_history(history)
 
         print("\n" + "=" * 60)
-        print("  SEND TO DATABASE — DATA GABUNGAN OCR + GPS")
+        print("  DATA CONTAINER TERSIMPAN KE DATABASE")
         print("=" * 60)
-        print(f"  Nomor Container : {ocr_data.get('Nomor Container :', 'N/A')}")
-        print(f"  Tipe Container  : {tipe_container}")
-        print(f"  Serial Number   : {ocr_data.get('Serial Number :', 'N/A')}")
-        print(f"  Check Number    : {ocr_data.get('Check Number :', 'N/A')}")
-        print(f"  Grade           : {ocr_data.get('Grade', 'N/A')}")
-        print(f"  Lokasi Slot     : {lokasi}")
-        print("-" * 60)
-        print(f"  Latitude        : {gps_data.get('avg_lat') or gps_data.get('latitude', 'N/A')}")
-        print(f"  Longitude       : {gps_data.get('avg_lon') or gps_data.get('longitude', 'N/A')}")
-        print(f"  Altitude        : {gps_data.get('avg_alt') or gps_data.get('altitude', 'N/A')} m")
-        print(f"  Easting  (UTM)  : {gps_data.get('easting', 'N/A')} m")
-        print(f"  Northing (UTM)  : {gps_data.get('northing', 'N/A')} m")
-        print(f"  UTM Zone        : {gps_data.get('utm_zone', 'N/A')}")
-        print(f"  RTK Status      : {gps_data.get('avg_rtk_status') or gps_data.get('rtk_status', 'N/A')}")
-        print(f"  GPS Quality     : {gps_data.get('avg_fix_quality') or gps_data.get('gps_quality', 'N/A')}")
-        print(f"  Waktu WIB       : {gps_data.get('time_wib', 'N/A')}")
+        print(f"  Nomor Container : {record['nomor_container']}")
+        print(f"  Tipe Container  : {record['tipe_container']}")
+        print(f"  Lokasi Slot     : {record['lokasi_slot']}")
+        print(f"  Waktu WIB       : {record['waktu']}")
         print("=" * 60 + "\n")
 
-        return jsonify({'success': True, 'message': 'Data dicetak ke console (placeholder).'})
+        return jsonify({'success': True, 'message': 'Data berhasil disimpan ke database.', 'record': record})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/save-record', methods=['POST'])
+def api_save_record():
+    """Endpoint langsung menyimpan record baru."""
+    return send_to_database()
+
+
+@app.route('/api/history', methods=['GET', 'DELETE'])
+def api_history():
+    """Endpoint membaca atau menghapus seluruh data riwayat."""
+    if request.method == 'DELETE':
+        save_history([])
+        return jsonify({'success': True, 'message': 'Riwayat berhasil dibersihkan.'})
+    
+    history = load_history()
+    return jsonify({'success': True, 'history': history, 'total': len(history)})
+
+
+@app.route('/api/history/<int:record_id>', methods=['DELETE'])
+def api_delete_history_item(record_id):
+    """Endpoint menghapus 1 item record riwayat berdasarkan ID."""
+    history = load_history()
+    new_history = [item for item in history if str(item.get('id')) != str(record_id)]
+    save_history(new_history)
+    return jsonify({'success': True, 'message': 'Record riwayat berhasil dihapus.'})
+
+
+@app.route('/api/history/delete-selected', methods=['POST'])
+def api_delete_selected_history():
+    """Endpoint menghapus beberapa item record riwayat terpilih."""
+    data = request.json or {}
+    raw_ids = data.get('ids', [])
+    ids_to_delete = set(str(i) for i in raw_ids)
+    
+    history = load_history()
+    new_history = [item for item in history if str(item.get('id')) not in ids_to_delete]
+    save_history(new_history)
+    return jsonify({'success': True, 'message': f'{len(ids_to_delete)} record berhasil dihapus.'})
+
+
+@app.route('/api/export/<format_type>', methods=['GET'])
+def api_export(format_type):
+    """Export data riwayat ke format CSV atau JSON."""
+    import io
+    import csv
+
+    history = load_history()
+    
+    if format_type.lower() in ('excel', 'xlsx', 'xls'):
+        html_out = "<html><head><meta charset='utf-8'></head><body><table border='1'>"
+        html_out += "<tr style='background-color:#1e293b;color:#ffffff;'><th>ID</th><th>Waktu WIB</th><th>Tipe Container</th><th>Nomor Container</th><th>Serial Number</th><th>Check Number</th><th>Grade</th><th>Lokasi Slot Depo</th></tr>"
+        for item in history:
+            html_out += f"<tr><td>{item.get('id','')}</td><td>{item.get('waktu','')}</td><td>{item.get('tipe_container','')}</td><td>{item.get('nomor_container','')}</td><td>{item.get('serial_number','')}</td><td>{item.get('check_number','')}</td><td>{item.get('grade','')}</td><td>{item.get('lokasi_slot','')}</td></tr>"
+        html_out += "</table></body></html>"
+
+        response = Response(html_out.encode('utf-8'), mimetype='application/vnd.ms-excel')
+        response.headers['Content-Disposition'] = 'attachment; filename=riwayat_container_ocr.xls'
+        return response
+
+    elif format_type.lower() == 'json':
+        clean_history = [{k: v for k, v in item.items() if k != 'image_uri'} for item in history]
+        response = Response(
+            json.dumps(clean_history, indent=2, ensure_ascii=False),
+            mimetype='application/json'
+        )
+        response.headers['Content-Disposition'] = 'attachment; filename=riwayat_container_ocr.json'
+        return response
+
+    elif format_type.lower() == 'csv':
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        headers = [
+            "ID", "Waktu WIB", "Tipe Container", "Nomor Container", 
+            "Serial Number", "Check Number", "Grade", "Lokasi Slot Depo"
+        ]
+        writer.writerow(headers)
+
+        for item in history:
+            writer.writerow([
+                item.get('id', ''),
+                item.get('waktu', ''),
+                item.get('tipe_container', ''),
+                item.get('nomor_container', ''),
+                item.get('serial_number', ''),
+                item.get('check_number', ''),
+                item.get('grade', ''),
+                item.get('lokasi_slot', '')
+            ])
+
+        response = Response(output.getvalue(), mimetype='text/csv')
+        response.headers['Content-Disposition'] = 'attachment; filename=riwayat_container_ocr.csv'
+        return response
+
+    return jsonify({'error': 'Format export tidak didukung (gunakan excel, csv, atau json).'}), 400
 
 
 # ─────────────────────────────────────────────
