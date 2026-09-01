@@ -944,7 +944,7 @@
                         <img id="img-preview-original" src="" alt="Original Preview">
                     </div>
                     <div class="ocr-img-card">
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hasil Anotasi EasyOCR</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hasil Anotasi PaddleOCR</p>
                         <img id="img-preview-annotated" src="" alt="OCR Annotated Preview">
                     </div>
                 </div>
@@ -1702,7 +1702,7 @@
         }
 
         async function processOCRImage(base64ImageUri) {
-            showToast('Menjalankan pemrosesan OCR EasyOCR...', 'info');
+            showToast('Menjalankan pemrosesan OCR PaddleOCR...', 'info');
             
             try {
                 const response = await fetch('/process-camera', {

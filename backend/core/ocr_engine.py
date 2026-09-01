@@ -1,383 +1,273 @@
+# =============================================================================
+# ocr_engine.py  –  Container OCR Service (Gemini Vision API)
+# =============================================================================
+import os
 import cv2
-import easyocr
+import time
+import json
+import base64
+import requests
 import numpy as np
-import re
 
-_READER = None
+try:
+    from dotenv import load_dotenv
+    # Load .env from the root directory
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+except ImportError:
+    pass
 
-def calculate_check_digit(container_num):
-    """
-    Menghitung ISO 6346 Check Digit untuk nomor container (4 huruf + 6 angka).
-    Mengembalikan string angka check digit (0-9).
-    """
-    char_map = {
-        'A': 10, 'B': 12, 'C': 13, 'D': 14, 'E': 15, 'F': 16, 'G': 17, 'H': 18, 'I': 19,
-        'J': 20, 'K': 21, 'L': 23, 'M': 24, 'N': 25, 'O': 26, 'P': 27, 'Q': 28, 'R': 29,
-        'S': 30, 'T': 31, 'U': 32, 'V': 34, 'W': 35, 'X': 36, 'Y': 37, 'Z': 38
-    }
-    if len(container_num) != 10:
+# ── Configuration (override via env variables) ────────────────────────────────
+DEBUG_MODE        = os.environ.get('OCR_DEBUG', 'true').lower() in ('1', 'true', 'yes')
+MAX_IMAGE_DIM     = int(os.environ.get('MAX_IMAGE_LONG_SIDE', '1280'))
+TIMEOUT_SECONDS   = float(os.environ.get('OCR_TIMEOUT', '45.0'))
+GEMINI_API_KEY    = os.environ.get('GEMINI_API_KEY', '')
+
+DEBUG_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'debug_outputs')
+if DEBUG_MODE:
+    os.makedirs(DEBUG_DIR, exist_ok=True)
+
+FIXED_PREFIX = "SPNU"
+
+# ── Logging helpers ──────────────────────────────────────────────────────────
+def _log(msg: str):
+    if DEBUG_MODE:
+        print(f'[OCR] {msg}')
+
+def _save_debug(img, step_name: str):
+    if not DEBUG_MODE:
+        return
+    ts = int(time.time() * 1000)
+    path = os.path.join(DEBUG_DIR, f'{ts}_{step_name}.jpg')
+    cv2.imwrite(path, img)
+    _log(f'Debug image saved: {path}')
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ISO 6346 Validation
+# ─────────────────────────────────────────────────────────────────────────────
+_ISO_CHAR_MAP = {
+    'A': 10, 'B': 12, 'C': 13, 'D': 14, 'E': 15, 'F': 16, 'G': 17, 'H': 18,
+    'I': 19, 'J': 20, 'K': 21, 'L': 23, 'M': 24, 'N': 25, 'O': 26, 'P': 27,
+    'Q': 28, 'R': 29, 'S': 30, 'T': 31, 'U': 32, 'V': 34, 'W': 35, 'X': 36,
+    'Y': 37, 'Z': 38,
+}
+
+def calculate_check_digit(ten_chars: str) -> str:
+    if len(ten_chars) != 10:
         return '?'
-    
     total = 0
-    for i, char in enumerate(container_num):
+    for i, ch in enumerate(ten_chars.upper()):
         if i < 4:
-            val = char_map.get(char.upper(), 0)
+            val = _ISO_CHAR_MAP.get(ch, 0)
         else:
-            try:
-                val = int(char)
-            except ValueError:
-                return '?' # Jika ada karakter invalid
+            if not ch.isdigit():
+                return '?'
+            val = int(ch)
         total += val * (2 ** i)
+    result = total % 11
+    return str(0 if result == 10 else result)
+
+def validate_iso6346(digits: str):
+    """
+    Validate ISO 6346 for exactly 7 digits with fixed SPNU prefix.
+    """
+    if len(digits) != 7 or not digits.isdigit():
+        return False, '?'
+    
+    full_str = FIXED_PREFIX + digits
+    expected = calculate_check_digit(full_str[:10])
+    if expected == '?':
+        return False, '?'
+    return (full_str[10] == expected), expected
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gemini API Integration
+# ─────────────────────────────────────────────────────────────────────────────
+def _call_gemini_vision(img_bytes: bytes) -> dict:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
+    
+    b64_img = base64.b64encode(img_bytes).decode('utf-8')
+    
+    prompt = f"""
+You are a highly accurate OCR system for reading shipping container numbers.
+The container prefix is ALWAYS "{FIXED_PREFIX}".
+Please find the 7 digits following the prefix (6-digit serial number and 1 check digit).
+The text might be printed horizontally or vertically.
+Return ONLY a valid JSON object matching this schema, without any markdown formatting or extra text.
+{{
+  "detected_digits": "the 7 digits you found (e.g. 1234567), or empty string if not found",
+  "confidence_score": a number between 0.0 and 1.0 representing your confidence
+}}
+"""
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": b64_img
+                        }
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.0,
+            "response_mime_type": "application/json"
+        }
+    }
+    
+    _log("Sending image to Gemini Vision API...")
+    try:
+        response = requests.post(url, json=payload, timeout=TIMEOUT_SECONDS)
+        response.raise_for_status()
+        data = response.json()
         
-    check = total % 11
-    if check == 10:
-        check = 0
-    return str(check)
-
-def get_reader():
-    global _READER
-    if _READER is None:
-        _READER = easyocr.Reader(['en'], gpu=False)
-    return _READER
-
-def preprocess_image(image_bytes):
-    """
-    Decodes and applies CLAHE to the full image.
-    Returns both the original color image and the processed grayscale.
-    """
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if img is None:
-        return None, None
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    processed_img = clahe.apply(gray)
-    return img, processed_img
-
-def find_leftmost_column_x(image, reader):
-    """
-    PASS 1: Quick scan of the full image.
-    Strategy: 
-      1. Find the TOPMOST detected character (smallest Y / closest to top of image).
-      2. Among all detections within the same top-region (top 20% of Y range),
-         find the LEFTMOST X.
-      3. This anchors the crop to the top-left corner of the number column,
-         ignoring bottom noise.
-    """
-    results = reader.readtext(
-        image,
-        paragraph=False,
-        allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-        mag_ratio=1.0,
-        link_threshold=0.99,
-        y_ths=0.1,
-        x_ths=0.1,
-    )
-    if not results:
-        print("[OCR PASS1] No text detected on full image.")
+        text_content = data['candidates'][0]['content']['parts'][0]['text']
+        _log(f"Gemini raw response: {text_content}")
+        
+        # Parse JSON
+        result = json.loads(text_content)
+        return result
+    except Exception as e:
+        _log(f"Gemini API Error: {e}")
         return None
 
-    # Collect all (x_left, y_top) for each detection
-    detections = []
-    for bbox, text, prob in results:
-        x_left = int(bbox[0][0])   # top-left X
-        y_top  = int(bbox[0][1])   # top-left Y
-        detections.append((x_left, y_top))
+# ─────────────────────────────────────────────────────────────────────────────
+# Image helpers
+# ─────────────────────────────────────────────────────────────────────────────
+def _decode_image(image_bytes: bytes):
+    arr = np.frombuffer(image_bytes, np.uint8)
+    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
-    # Find the topmost Y value
-    min_y = min(d[1] for d in detections)
-    # Find the Y range to define "top cluster" (top 20% of image height)
-    img_h = image.shape[0]
-    y_threshold = min_y + img_h * 0.20
+def _encode_jpeg(img_bgr: np.ndarray) -> bytes:
+    success, buffer = cv2.imencode('.jpg', img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    if not success:
+        raise ValueError("Failed to encode image to JPEG")
+    return buffer.tobytes()
 
-    # Among detections in the top cluster, find the leftmost X
-    top_cluster = [d for d in detections if d[1] <= y_threshold]
-    leftmost_x = min(d[0] for d in top_cluster)
+def _resize_if_needed(img: np.ndarray) -> np.ndarray:
+    h, w = img.shape[:2]
+    if max(h, w) > MAX_IMAGE_DIM:
+        scale = MAX_IMAGE_DIM / float(max(h, w))
+        return cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+    return img
 
-    print(f"[OCR PASS1] Top cluster ({len(top_cluster)} detections), leftmost X={leftmost_x} (min_y={min_y})")
-    return leftmost_x
-
-def extract_text_on_crop(image, reader):
-    """
-    PASS 2: Full-quality EasyOCR on the already-cropped image strip.
-    """
-    return reader.readtext(
-        image,
-        paragraph=False,
-        y_ths=0.1,
-        x_ths=0.1,
-        width_ths=0.1,
-        height_ths=0.1,
-        link_threshold=0.99,
-        allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-        mag_ratio=2.0,
-        add_margin=0.15
-    )
-
-def group_and_sort_vertically(results, x_tolerance=50):
-    """
-    Groups EasyOCR detections into vertical columns by X-coordinate proximity.
-    Sorts each column top-to-bottom by Y position.
-    """
-    boxes = []
-    for bbox, text, prob in results:
-        cx = (bbox[0][0] + bbox[2][0]) / 2
-        cy = (bbox[0][1] + bbox[2][1]) / 2
-        boxes.append({'bbox': bbox, 'text': text, 'prob': prob, 'cx': cx, 'cy': cy})
-
-    columns = []
-    for box in boxes:
-        placed = False
-        for col in columns:
-            avg_cx = sum(b['cx'] for b in col) / len(col)
-            if abs(box['cx'] - avg_cx) <= x_tolerance:
-                col.append(box)
-                placed = True
-                break
-        if not placed:
-            columns.append([box])
-
-    for col in columns:
-        col.sort(key=lambda item: item['cy'])
-
-    return columns
-
-def clean_character(char_text):
-    """
-    Strips vertical-line border artifacts read as '1', 'I', or 'L'.
-    e.g. '161' -> '6',  '41' -> '4'
-    Also applies OCR digit-correction for common letter/digit confusions.
-    """
-    char_text = char_text.strip().upper()
-    if len(char_text) > 1:
-        char_text = re.sub(r'^[1IL]+', '', char_text)
-        char_text = re.sub(r'[1IL]+$', '', char_text)
-        if not char_text:
-            return char_text.strip().upper()
-    # Apply common OCR letter-to-digit corrections
-    ocr_corrections = {
-        'O': '0', 'D': '0', 'Q': '0',
-        'I': '1', 'L': '1',
-        'Z': '2',
-        'E': '3',
-        'A': '4', 'H': '4',
-        'S': '5',
-        'G': '6', 'b': '6',
-        'T': '7',
-        'B': '8',
-        'P': '9', 'q': '9',
-    }
-    # Only apply correction if the entire string is a single known-confusable letter
-    if len(char_text) == 1 and char_text in ocr_corrections:
-        corrected = ocr_corrections[char_text]
-        print(f"[OCR CORRECT] '{char_text}' -> '{corrected}'")
-        return corrected
-    return char_text
-
-def parse_container_number(columns):
-    """
-    Strategy:
-    1. Pick the leftmost column in the crop.
-    2. Concatenate all detected characters top-to-bottom.
-    3. Strip ALL letters — only keep digits.
-    4. Take the LAST 7 digits (the bottom of the column is always the number).
-       - Last digit  = Check Number
-       - Digits 2-7 from bottom = 6-digit Serial Number
-    5. Always prepend 'SPNU' (ignore whatever letters OCR detected).
-    """
-    if not columns:
-        return _not_found()
-
-    # Take the leftmost column within the crop
-    sorted_columns = sorted(columns, key=lambda col: sum(b['cx'] for b in col) / len(col))
-    best_col = sorted_columns[0]
-
-    # Clean all chars and concatenate top-to-bottom
-    cleaned_chars = []
-    for b in best_col:
-        b['text'] = clean_character(b['text'])
-        cleaned_chars.append(b['text'])
-
-    raw = "".join(cleaned_chars)
-    print(f"[OCR PASS2] Raw column text: '{raw}'")
-
-    # Strip ALL non-digit characters — serial and check number must be digits only
-    digits_only = re.sub(r'[^0-9]', '', raw)
-    print(f"[OCR PASS2] Digits only: '{digits_only}' (total={len(digits_only)})")
-
-    if len(digits_only) < 6:
-        print(f"[OCR PASS2] Not enough digits found ({len(digits_only)} < 6)")
-        return _not_found(best_col)
-
-    # Take the LAST 7 digits (bottom of the column = actual number)
-    if len(digits_only) >= 7:
-        last_7 = digits_only[-7:]
+def _draw_annotation(img: np.ndarray, detected_digits: str) -> np.ndarray:
+    annotated = img.copy()
+    if detected_digits:
+        text = f"{FIXED_PREFIX}{detected_digits}"
+        color = (0, 255, 0)
     else:
-        last_7 = digits_only.zfill(7)
-
-    last_7 = ''.join(c if c.isdigit() else '0' for c in last_7)
-    print(f"[OCR PASS2] Last 7 digits (validated): '{last_7}'")
-
-    # Ambil confidence dari deteksi terakhir (posisi check digit)
-    check_confidence = best_col[-1]['prob'] if best_col else 1.0
-    return _build_result('SPNU', last_7, best_col, check_confidence)
-
-def _build_result(prefix, digits, col, check_confidence=1.0):
-    # Always force prefix to 'SPNU' regardless of what OCR detected
-    prefix = 'SPNU'
-
-    # Hard enforce: digits must only contain 0-9 (strip any stray letter)
-    digits = re.sub(r'[^0-9]', '', digits)
-
-    serial = digits[:6]
-    detected_check = digits[6] if len(digits) >= 7 else '?'
-
-    # Validasi ISO 6346 KHUSUS untuk check digit saja.
-    # Serial number tidak disentuh sama sekali.
-    # Koreksi HANYA dilakukan jika:
-    #   1. Confidence check digit rendah (< 0.65) — indikasi OCR ragu
-    #   2. Hasil ISO berbeda dari hasil baca OCR
-    check = detected_check
-    if len(serial) == 6:
-        expected_check = calculate_check_digit(prefix + serial)
-        print(f"[OCR INFO] Check Digit — Detected: '{detected_check}' (conf={check_confidence:.2f}), ISO Expected: '{expected_check}'")
-        if expected_check != '?' and detected_check != expected_check and check_confidence < 0.65:
-            print(f"[OCR CORRECT] Check digit confidence rendah ({check_confidence:.2f} < 0.65). Koreksi '{detected_check}' -> '{expected_check}' (ISO 6346)")
-            check = expected_check
-            # Update teks box terakhir agar visualisasi juga menampilkan nilai yang dikoreksi
-            if col:
-                col[-1]['text'] = expected_check
-
-    # Extra safety: if check or any serial char is still not a digit, flag it
-    if check != '?' and not check.isdigit():
-        print(f"[OCR WARN] Non-digit check number detected: '{check}', replacing with '?'")
-        check = '?'
-    serial = ''.join(c if c.isdigit() else '?' for c in serial)
-
-    container_number = f"{prefix}{serial}{check}"
-    try:
-        grade = "Grade : B" if int(serial[:2]) < 30 else "Grade : A"
-    except ValueError:
-        grade = "Grade : Unknown"
-    print(f"[OCR RESULT] Nomor Container: {container_number}")
-    return {
-        "Serial Number :": serial,
-        "Check Number :": check,
-        "Nomor Container :": container_number,
-        "Grade": grade,
-        "boxes": col,
-    }
-
-def _not_found(col=None):
-    return {
-        "Serial Number :": "Not Found",
-        "Check Number :": "Not Found",
-        "Nomor Container :": "Not Found",
-        "Grade": "Not Found",
-        "boxes": col or [],
-    }
-
-def refine_zero_vs_eight(img, bbox, original_text):
-    """
-    Mengecek secara visual apakah karakter '0' atau '8' memiliki garis horizontal di tengah.
-    Menggunakan area tengah yang sangat presisi agar kebal terhadap font 0 yang tebal
-    dan kebal terhadap kotak pinggir pada check digit.
-    """
-    pt1 = (int(bbox[0][0]), int(bbox[0][1]))
-    pt3 = (int(bbox[2][0]), int(bbox[2][1]))
-    
-    x1, y1 = max(0, pt1[0]), max(0, pt1[1])
-    x2, y2 = min(img.shape[1], pt3[0]), min(img.shape[0], pt3[1])
-    
-    if y2 - y1 < 10 or x2 - x1 < 5:
-        return original_text
+        text = "Not Found"
+        color = (0, 0, 255)
         
-    char_crop = img[y1:y2, x1:x2]
-    
-    # Binarize: teks hitam pada background terang menjadi putih pada background hitam
-    _, thresh = cv2.threshold(char_crop, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    
-    h, w = thresh.shape
-    
-    # Cek TEPAT di titik paling tengah (Core Center Hole)
-    # Y: 40% - 60% (menangkap garis melintang / bridge angka 8)
-    # X: 45% - 55% (sangat sempit di tengah horizontal untuk menghindari garis sisi tebal angka 0)
-    cy1, cy2 = int(h * 0.40), int(h * 0.60)
-    cx1, cx2 = int(w * 0.45), int(w * 0.55)
-    
-    if cy2 == cy1: cy2 += 1
-    if cx2 == cx1: cx2 += 1
-    
-    center_hole = thresh[cy1:cy2, cx1:cx2]
-    white_pixels = cv2.countNonZero(center_hole)
-    total_pixels = center_hole.shape[0] * center_hole.shape[1]
-    
-    if total_pixels == 0:
-        return '0'
-        
-    fill_ratio = white_pixels / total_pixels
-    print(f"[0/8 HEURISTIC] Text: {original_text} | Fill Ratio: {fill_ratio:.3f} | ROI: {total_pixels}px")
-    
-    # Jika titik tengah memiliki pixel putih (garis), maka itu angka 8
-    # Threshold rendah (0.10) karena area yang dicek sangat kecil dan tepat di tengah
-    if fill_ratio > 0.10:
-        return '8'
-    else:
-        return '0'
-
-def draw_visualizations(image, results):
-    annotated = image.copy()
-    for bbox, text, prob in results:
-        pt1 = (int(bbox[0][0]), int(bbox[0][1]))
-        pt2 = (int(bbox[2][0]), int(bbox[2][1]))
-        cv2.rectangle(annotated, pt1, pt2, (0, 255, 0), 2)
-        label = f"{text} ({prob:.2f})"
-        font_scale = 0.8
-        thickness = 2
-        (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
-        cv2.rectangle(annotated, (pt1[0], pt1[1] - 30), (pt1[0] + w, pt1[1]), (0, 255, 0), -1)
-        cv2.putText(annotated, label, (pt1[0], pt1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
+    # Draw a box at the top left
+    h, w = img.shape[:2]
+    cv2.rectangle(annotated, (10, 10), (w - 10, 60), (0, 0, 0), -1)
+    cv2.putText(annotated, f"LLM Result: {text}", (20, 45), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3, cv2.LINE_AA)
     return annotated
 
-def process_pipeline(image_bytes, x_tolerance=50):
-    reader = get_reader()
-
-    original_img, processed_img = preprocess_image(image_bytes)
-    if original_img is None:
-        return None, None
-
-    img_h, img_w = original_img.shape[:2]
-
-    # ── PASS 1: Find the X position of the leftmost detected letter on the RIGHT HALF ──────────
-    half_w = img_w // 2
-    right_half_img = processed_img[:, half_w:]
-    leftmost_x_relative = find_leftmost_column_x(right_half_img, reader)
+# ─────────────────────────────────────────────────────────────────────────────
+# UI Builders
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_success_result(digits: str, conf: float) -> dict:
+    cn = FIXED_PREFIX + digits
+    is_valid, calc_check = validate_iso6346(digits)
     
-    if leftmost_x_relative is None:
-        leftmost_x = 0  # fallback: use full image
-    else:
-        leftmost_x = leftmost_x_relative + half_w  # Adjust back to absolute original coordinates
+    grade = 'Grade : A' if conf >= 0.75 else 'Grade : B'
+    status = 'success' if len(digits) == 7 else 'partial'
+    
+    return {
+        'Nomor Container :': cn if status == 'success' else 'N/A',
+        'Serial Number :': digits[:6] if len(digits) >= 6 else 'N/A',
+        'Check Number :': digits[6] if len(digits) == 7 else 'N/A',
+        'Grade': grade,
+        'boxes': [], # Empty for LLM
+        'prefix': FIXED_PREFIX,
+        'detected_digits': digits,
+        'serial_number': digits[:6] if len(digits) >= 6 else '',
+        'check_digit': digits[6] if len(digits) == 7 else '',
+        'ocr_confidence': conf,
+        'orientation': 'LLM',
+        'iso_valid': is_valid,
+        'calculated_check_digit': calc_check,
+        'status': status
+    }
 
-    # ── CROP: ±300 px around the leftmost column ─────────────────────────────
-    PAD_LEFT  = 300
-    PAD_RIGHT = 100  # 100px less than left to cut right-side noise
-    crop_x1 = max(0, leftmost_x - PAD_LEFT)
-    crop_x2 = min(img_w, leftmost_x + PAD_RIGHT)
-    print(f"[OCR CROP] x1={crop_x1}  x2={crop_x2}  (image width={img_w})")
+def _build_not_found_result() -> dict:
+    return {
+        'Nomor Container :': 'Not Found',
+        'Serial Number :': 'Not Found',
+        'Check Number :': 'Not Found',
+        'Grade': 'Grade : Unknown',
+        'boxes': [],
+        'prefix': FIXED_PREFIX,
+        'detected_digits': '',
+        'serial_number': '',
+        'check_digit': '',
+        'ocr_confidence': 0.0,
+        'orientation': 'unknown',
+        'iso_valid': False,
+        'calculated_check_digit': '',
+        'status': 'error'
+    }
 
-    cropped_color     = original_img[:, crop_x1:crop_x2]
-    cropped_processed = processed_img[:, crop_x1:crop_x2]
+def _build_error_result(err_msg: str) -> dict:
+    res = _build_not_found_result()
+    res['error'] = err_msg
+    return res
 
-    # ── PASS 2: High-quality OCR on the narrow crop ───────────────────────────
-    results = extract_text_on_crop(cropped_processed, reader)
+# ─────────────────────────────────────────────────────────────────────────────
+# Main Pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+def process_pipeline(image_bytes: bytes, x_tolerance=100) -> tuple[np.ndarray | None, dict]:
+    """
+    Main entry point for Gemini-based OCR pipeline.
+    """
+    _log('--- Starting Gemini LLM Pipeline ---')
+    t_start = time.time()
+    
+    try:
+        # Decode & Resize
+        img = _decode_image(image_bytes)
+        if img is None:
+            return None, _build_error_result('Failed to decode image.')
+        
+        img = _resize_if_needed(img)
+        _save_debug(img, '01_original')
+        
+        # We need to send JPEG bytes to the API
+        jpg_bytes = _encode_jpeg(img)
+        
+        # Call Gemini
+        result = _call_gemini_vision(jpg_bytes)
+        
+        if result and result.get('detected_digits'):
+            digits = str(result['detected_digits'])
+            # Clean non-digits just in case
+            digits = ''.join(filter(str.isdigit, digits))
+            conf = float(result.get('confidence_score', 0.9))
+            
+            annotated_img = _draw_annotation(img, digits)
+            
+            if len(digits) >= 5:
+                res_dict = _build_success_result(digits, conf)
+            else:
+                res_dict = _build_not_found_result()
+                
+            _log(f'Pipeline completed in {time.time() - t_start:.2f}s (LLM detected: {digits})')
+            return annotated_img, res_dict
+        else:
+            _log(f'Pipeline completed in {time.time() - t_start:.2f}s (LLM returned Not Found)')
+            annotated_img = _draw_annotation(img, "")
+            return annotated_img, _build_not_found_result()
+            
+    except Exception as exc:
+        _log(f'LLM pipeline failed: {exc}')
+        # Generate a blank image if we can't even get img
+        blank = np.zeros((100, 100, 3), dtype=np.uint8)
+        return blank, _build_error_result(f'Pipeline error: {exc}')
 
-    columns = group_and_sort_vertically(results, x_tolerance)
-    extracted_data = parse_container_number(columns)
-
-    # Draw all boxes on the cropped color image
-    all_boxes = [box for col in columns for box in col]
-    draw_data = [(b['bbox'], b['text'], b['prob']) for b in all_boxes]
-    annotated_crop = draw_visualizations(cropped_color, draw_data)
-
-    annotated_rgb = cv2.cvtColor(annotated_crop, cv2.COLOR_BGR2RGB)
-    return annotated_rgb, extracted_data
