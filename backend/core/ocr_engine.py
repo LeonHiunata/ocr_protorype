@@ -83,7 +83,7 @@ def validate_iso6346(digits: str):
 # Gemini API Integration
 # ─────────────────────────────────────────────────────────────────────────────
 def _call_gemini_vision(img_bytes: bytes) -> dict:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     b64_img = base64.b64encode(img_bytes).decode('utf-8')
     
