@@ -8,6 +8,7 @@ import json
 import base64
 import requests
 import numpy as np
+import datetime
 
 try:
     from dotenv import load_dotenv
@@ -80,6 +81,52 @@ def validate_iso6346(digits: str):
     return (full_str[10] == expected), expected
 
 # ─────────────────────────────────────────────────────────────────────────────
+# API Usage Tracking
+# ─────────────────────────────────────────────────────────────────────────────
+MAX_RPM = int(os.environ.get('GEMINI_MAX_RPM', '15'))
+MAX_TPM = int(os.environ.get('GEMINI_MAX_TPM', '1000000'))
+MAX_RPD = int(os.environ.get('GEMINI_MAX_RPD', '1500'))
+
+class RateTracker:
+    def __init__(self):
+        self.requests_today = 0
+        self.requests_this_minute = 0
+        self.tokens_this_minute = 0
+        now = datetime.datetime.now()
+        self.current_minute = now.minute
+        self.current_day = now.day
+
+    def add_usage(self, tokens_used):
+        now = datetime.datetime.now()
+        
+        if now.day != self.current_day:
+            self.requests_today = 0
+            self.current_day = now.day
+            
+        if now.minute != self.current_minute:
+            self.requests_this_minute = 0
+            self.tokens_this_minute = 0
+            self.current_minute = now.minute
+
+        self.requests_today += 1
+        self.requests_this_minute += 1
+        self.tokens_this_minute += tokens_used
+
+        remaining_rpd = max(0, MAX_RPD - self.requests_today)
+        remaining_rpm = max(0, MAX_RPM - self.requests_this_minute)
+        remaining_tpm = max(0, MAX_TPM - self.tokens_this_minute)
+        
+        print("\n" + "="*50)
+        print("📊 [GEMINI API USAGE TRACKER]")
+        print(f"🔹 Token Dipakai (Request Ini) : {tokens_used}")
+        print(f"🔹 Sisa Request (Menit Ini)  : {remaining_rpm} / {MAX_RPM}")
+        print(f"🔹 Sisa Request (Hari Ini)   : {remaining_rpd} / {MAX_RPD}")
+        print(f"🔹 Sisa Token (Menit Ini)    : {remaining_tpm} / {MAX_TPM}")
+        print("="*50 + "\n")
+
+usage_tracker = RateTracker()
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Gemini API Integration
 # ─────────────────────────────────────────────────────────────────────────────
 def _call_gemini_vision(img_bytes: bytes) -> dict:
@@ -130,6 +177,12 @@ Return ONLY a valid JSON object matching this schema, without any markdown forma
         
         # Parse JSON
         result = json.loads(text_content)
+        
+        total_tokens = 0
+        if 'usageMetadata' in data:
+            total_tokens = data['usageMetadata'].get('totalTokenCount', 0)
+        usage_tracker.add_usage(total_tokens)
+        
         return result
     except Exception as e:
         _log(f"Gemini API Error: {e}")

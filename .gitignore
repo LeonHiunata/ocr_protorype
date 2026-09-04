@@ -20,15 +20,24 @@ dataset2_results.csv
 
 # Environment Variables / API Keys (jika nanti menggunakan .env)
 .env
+.env.local
 
+# History & Debug files
+debug_outputs/
+data_history.json
+backend/data/data_history.json
+backend/data/users.json
+*.log
+search.txt
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Old legacy / test files
 apk_deteksi_container/
-
 test_crops/
-
 training_data/
-
 *.pth
-
 train_easyocr.py
-
 prepare_training_data.py

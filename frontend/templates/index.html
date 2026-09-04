@@ -148,6 +148,24 @@
             color: #ffffff !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
         }
+
+        .btn-logout {
+            background: rgba(200, 16, 46, 0.8) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .btn-logout:hover {
+            background: rgba(200, 16, 46, 1) !important;
+        }
         #theme-toggle:hover {
             background: rgba(0, 0, 0, 0.3) !important;
         }
@@ -821,6 +839,9 @@
             <button class="btn btn-secondary" id="theme-toggle" onclick="toggleTheme()" style="padding: 0.4rem 0.8rem; border-radius: 20px;" title="Toggle Dark/Light Mode">
                 <i class="fa-solid fa-sun" id="theme-icon"></i>
             </button>
+            <button onclick="logout()" class="btn btn-danger" title="Logout" style="padding: 0.4rem 0.8rem; border-radius: 20px;">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
         </div>
     </header>
 
@@ -1174,10 +1195,8 @@
                 <p>Daftar riwayat data kontainer yang berhasil diinspeksi dan disimpan.</p>
             </div>
 
-            <div class="history-toolbar">
-                <input type="text" class="search-input" id="history-search" placeholder="Cari Nomor Container / Slot..." oninput="renderHistoryTable()">
-                
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="history-toolbar" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <a href="/api/export/xlsx" class="btn btn-secondary" style="font-size: 0.8rem;">
                         <i class="fa-solid fa-file-excel" style="color: #3a9542;"></i> Ekspor Excel (XLSX)
                     </a>
@@ -1194,6 +1213,21 @@
                         <i class="fa-solid fa-dumpster"></i> Hapus Semua Log
                     </button>
                 </div>
+
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <input type="text" class="search-input" id="history-search" placeholder="Cari bebas (No/Slot/Tgl)..." oninput="renderHistoryTable(true)" style="flex: 1; min-width: 150px;">
+                    <input type="date" class="search-input" id="filter-tanggal" oninput="renderHistoryTable(true)" style="width: auto;">
+                    <select class="search-input" id="filter-ukuran" onchange="renderHistoryTable(true)" style="width: auto; appearance: auto; color: inherit;">
+                        <option value="">Semua Ukuran</option>
+                        <option value="20ft">20ft</option>
+                        <option value="40ft">40ft</option>
+                    </select>
+                    <select class="search-input" id="filter-grade" onchange="renderHistoryTable(true)" style="width: auto; appearance: auto; color: inherit;">
+                        <option value="">Semua Grade</option>
+                        <option value="A">Grade A (Serial >= 30)</option>
+                        <option value="B">Grade B (Serial < 30)</option>
+                    </select>
+                </div>
             </div>
 
             <div class="history-table-wrapper">
@@ -1203,12 +1237,12 @@
                             <th style="width: 40px; text-align: center;">
                                 <input type="checkbox" id="select-all-history" onchange="toggleSelectAllHistory(this.checked)" title="Pilih Semua">
                             </th>
-                            <th>Waktu WIB</th>
+                            <th>Tanggal</th>
+                            <th>Jam</th>
+                            <th>Gambar Raw</th>
                             <th>Ukuran</th>
                             <th>Nomor Container</th>
-                            <th>Serial / Check</th>
-                            <th>Grade</th>
-                            <th>Lokasi Slot Depo</th>
+                            <th>Slot Depo</th>
                             <th style="text-align: center;">Aksi</th>
                         </tr>
                     </thead>
@@ -1216,6 +1250,10 @@
                         <!-- History rows appended dynamically -->
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div id="history-pagination-controls" style="margin-top: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
             </div>
 
             <div style="display: flex; justify-content: center; margin-top: 2rem;">
@@ -1225,6 +1263,12 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;" onclick="closeImageModal()">
+        <span style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
+        <img id="modal-img" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
     </div>
 
     <!-- Toast Notifications Container -->
@@ -1719,6 +1763,7 @@
 
                 appState.ocrData = data.results;
                 appState.ocrImageUri = data.image_uri || base64ImageUri;
+                appState.rawImageUri = base64ImageUri; // Save raw image to state
 
                 // Render OCR details
                 document.getElementById('img-preview-original').src = base64ImageUri;
@@ -1940,7 +1985,7 @@
                 ocr_data: appState.ocrData || {},
                 gps_data: appState.gpsData || {},
                 lokasi: (appState.gpsData && appState.gpsData.detected_slot) ? appState.gpsData.detected_slot : 'SLOT H1',
-                image_uri: appState.ocrImageUri || ''
+                image_uri: appState.rawImageUri || appState.ocrImageUri || ''
             };
 
             try {
@@ -1985,21 +2030,70 @@
             }
         }
 
-        function renderHistoryTable() {
+        let historyCurrentPage = 1;
+        const historyRowsPerPage = 10;
+
+        function renderHistoryTable(resetPage = false) {
+            if (resetPage) historyCurrentPage = 1;
+            
             const tbody = document.getElementById('history-table-body');
             const searchQuery = (document.getElementById('history-search').value || '').toLowerCase();
+            const filterTanggal = document.getElementById('filter-tanggal').value;
+            const filterUkuran = document.getElementById('filter-ukuran').value;
+            const filterGrade = document.getElementById('filter-grade').value;
+
+            // Pre-calculate grade based on serial 2 terdepan for filtering and display
+            appState.historyLogs.forEach(item => {
+                let gradeStr = 'B'; // default
+                if (item.serial_number && item.serial_number.length >= 2) {
+                    const firstTwo = parseInt(item.serial_number.substring(0, 2), 10);
+                    if (!isNaN(firstTwo) && firstTwo >= 30) {
+                        gradeStr = 'A';
+                    }
+                }
+                item._calculatedGrade = gradeStr;
+            });
 
             const filtered = appState.historyLogs.filter(item => {
                 const noStr = (item.nomor_container || '').toLowerCase();
                 const slotStr = (item.lokasi_slot || '').toLowerCase();
-                return noStr.includes(searchQuery) || slotStr.includes(searchQuery);
+                const dateStr = (item.waktu || '').toLowerCase();
+                const sizeStr = (item.tipe_container || '').toLowerCase();
+                
+                const searchMatch = noStr.includes(searchQuery) || 
+                       slotStr.includes(searchQuery) ||
+                       dateStr.includes(searchQuery) ||
+                       sizeStr.includes(searchQuery);
+
+                let dateMatch = true;
+                if (filterTanggal) {
+                    dateMatch = dateStr.includes(filterTanggal);
+                }
+
+                let sizeMatch = true;
+                if (filterUkuran) {
+                    sizeMatch = sizeStr === filterUkuran.toLowerCase();
+                }
+
+                let gradeMatch = true;
+                if (filterGrade) {
+                    gradeMatch = item._calculatedGrade === filterGrade;
+                }
+
+                return searchMatch && dateMatch && sizeMatch && gradeMatch;
             });
+
+            const totalPages = Math.ceil(filtered.length / historyRowsPerPage) || 1;
+            if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+
+            const startIndex = (historyCurrentPage - 1) * historyRowsPerPage;
+            const paginated = filtered.slice(startIndex, startIndex + historyRowsPerPage);
 
             const selectAllCb = document.getElementById('select-all-history');
             if (selectAllCb) selectAllCb.checked = false;
             updateDeleteSelectedBtn();
 
-            if (filtered.length === 0) {
+            if (paginated.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="empty-history">
@@ -2008,19 +2102,32 @@
                         </td>
                     </tr>
                 `;
+                renderHistoryPagination(1, 1);
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
+            tbody.innerHTML = paginated.map(item => {
+                const parts = (item.waktu || '').split(' ');
+                const tanggal = parts[0] || '-';
+                const jam = parts[1] ? (parts[1] + (parts[2] ? ' ' + parts[2] : '')) : '-';
+                
+                return `
                 <tr>
                     <td style="text-align: center;">
                         <input type="checkbox" class="history-checkbox" value="${item.id}" onchange="updateDeleteSelectedBtn()">
                     </td>
-                    <td style="font-size: 0.8rem; color: var(--text-muted);">${item.waktu || '-'}</td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${tanggal}</td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${jam}</td>
+                    <td style="text-align: center;">
+                        ${item.image_uri ? `<img src="${item.image_uri}" style="height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="openImageModal('${item.image_uri}')" alt="Raw Image" title="Klik untuk memperbesar">` : '-'}
+                    </td>
                     <td><span class="size-badge" style="position:static;">${item.tipe_container || '20ft'}</span></td>
-                    <td style="font-weight: 700; font-family: monospace; color: var(--primary);">${item.nomor_container || 'N/A'}</td>
-                    <td style="font-family: monospace; font-size: 0.85rem;">${item.serial_number || 'N/A'} / ${item.check_number || 'N/A'}</td>
-                    <td><span class="grade-badge a" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">${item.grade || 'Grade A'}</span></td>
+                    <td style="font-weight: 700; font-family: monospace; color: var(--primary);">
+                        ${item.nomor_container || 'N/A'}
+                        <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">
+                            Grade: <span class="grade-badge ${item._calculatedGrade.toLowerCase()}" style="padding: 0.15rem 0.4rem; font-size: 0.65rem; border-radius: 4px;">Grade ${item._calculatedGrade}</span>
+                        </div>
+                    </td>
                     <td style="font-weight: 700; color: var(--success);">${item.lokasi_slot || 'N/A'}</td>
                     <td style="text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; border-radius: 6px;" onclick="deleteSingleRecord(${item.id})" title="Hapus Item Ini">
@@ -2028,7 +2135,18 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+            
+            renderHistoryPagination(historyCurrentPage, totalPages);
+        }
+
+        function renderHistoryPagination(current, total) {
+            const container = document.getElementById('history-pagination-controls');
+            container.innerHTML = `
+                <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" ${current === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="historyCurrentPage--; renderHistoryTable()">Sebelumnya</button>
+                <span style="font-size:0.9rem; font-weight:600; color:var(--text-main);">Halaman ${current} dari ${total}</span>
+                <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" ${current === total ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="historyCurrentPage++; renderHistoryTable()">Selanjutnya</button>
+            `;
         }
 
         function toggleSelectAllHistory(checked) {
@@ -2151,6 +2269,25 @@
                 toast.style.transition = 'all 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
+        }
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = src;
+            modal.style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').style.display = 'none';
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch(e) {
+                console.error(e);
+            }
         }
     </script>
 </body>

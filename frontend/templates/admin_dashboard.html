@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SPIL Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Base styles */
+        :root {
+            --primary: #c8102e;
+            --success: #3a9542;
+            --bg-color: #f4f6f8;
+            --surface: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        header {
+            background-color: var(--success);
+            padding: 1rem 2rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title { font-weight: 700; font-size: 1.2rem; }
+        .header-actions button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .header-actions button:hover { background: rgba(255,255,255,0.3); }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .card h2 { margin-top: 0; color: var(--primary); font-size: 1.2rem; margin-bottom: 1rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { background: #f9fafb; font-weight: 600; }
+        
+        .badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge.pending { background: #fff3cd; color: #856404; }
+        .badge.approved { background: #d1e7dd; color: #0f5132; }
+        .badge.rejected { background: #f8d7da; color: #842029; }
+        
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: white;
+        }
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--primary); }
+
+        /* Modal for Image */
+        #image-modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+        }
+        #modal-img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+        .close-modal { position: absolute; top: 15px; right: 35px; color: white; font-size: 40px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title"><i class="fa-solid fa-user-shield"></i> Admin Dashboard</div>
+        <div class="header-actions">
+            <span>Admin</span>
+            <button onclick="logout()" style="margin-left: 1rem;"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Manajemen Pengguna -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0;"><i class="fa-solid fa-users"></i> Manajemen Pengguna</h2>
+                <button onclick="openAddUserModal()" class="btn-sm" style="background: var(--primary); padding: 0.5rem 1rem;"><i class="fa-solid fa-plus"></i> Tambah Pengguna</button>
+            </div>
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="4">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Riwayat Kontainer -->
+        <div class="card">
+            <h2><i class="fa-solid fa-database"></i> Rekap Riwayat Kontainer (Global)</h2>
+            <div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                <input type="text" id="history-search" placeholder="Cari bebas..." oninput="renderHistoryTable(true)" style="padding: 0.5rem; width: 150px;">
+                <input type="date" id="filter-tanggal" oninput="renderHistoryTable(true)" style="padding: 0.5rem;">
+                <select id="filter-ukuran" onchange="renderHistoryTable(true)" style="padding: 0.5rem;">
+                    <option value="">Semua Ukuran</option>
+                    <option value="20ft">20ft</option>
+                    <option value="40ft">40ft</option>
+                </select>
+                <select id="filter-grade" onchange="renderHistoryTable(true)" style="padding: 0.5rem;">
+                    <option value="">Semua Grade</option>
+                    <option value="A">Grade A</option>
+                    <option value="B">Grade B</option>
+                </select>
+                <a href="/api/export/xlsx" class="btn-sm" style="background: var(--success); text-decoration: none; padding: 0.5rem 1rem;">Ekspor Excel</a>
+            </div>
+            
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Jam</th>
+                        <th>Gambar</th>
+                        <th>Ukuran</th>
+                        <th>Nomor Container</th>
+                        <th>Lokasi Slot</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr><td colspan="5">Memuat data...</td></tr>
+                </tbody>
+            </table>
+            
+            <!-- Pagination Controls -->
+            <div id="pagination-controls" style="margin-top: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" onclick="closeImageModal()">
+        <span class="close-modal">&times;</span>
+        <img id="modal-img">
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="add-user-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:12px; width:400px; max-width:90%; position:relative;">
+            <span onclick="closeAddUserModal()" style="position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+            <h3 style="margin-top:0; color:var(--primary);"><i class="fa-solid fa-user-plus"></i> Tambah Pengguna</h3>
+            <div id="add-user-error" style="color:var(--danger); font-size:0.85rem; margin-bottom:1rem; display:none;"></div>
+            
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.9rem;">Username</label>
+                <input type="text" id="new-username" placeholder="Ex: krani_baru" style="width:100%; padding:0.8rem; border:1px solid var(--border-color); border-radius:6px; box-sizing:border-box;">
+            </div>
+            
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.9rem;">Password</label>
+                <input type="password" id="new-password" placeholder="Ex: password123" style="width:100%; padding:0.8rem; border:1px solid var(--border-color); border-radius:6px; box-sizing:border-box;">
+            </div>
+            
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.9rem;">Role</label>
+                <select id="new-role" style="width:100%; padding:0.8rem; border:1px solid var(--border-color); border-radius:6px; box-sizing:border-box;">
+                    <option value="krani">Krani (User Reguler)</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <button onclick="submitAddUser()" id="btn-add-user" style="width:100%; background:var(--primary); color:white; border:none; padding:0.8rem; border-radius:6px; font-weight:600; cursor:pointer;">Tambah User</button>
+        </div>
+    </div>
+
+    <script>
+        let historyLogs = [];
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+
+        function openAddUserModal() {
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-role').value = 'krani';
+            document.getElementById('add-user-error').style.display = 'none';
+            document.getElementById('add-user-modal').style.display = 'flex';
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('add-user-modal').style.display = 'none';
+        }
+
+        async function submitAddUser() {
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const role = document.getElementById('new-role').value;
+            const errorBox = document.getElementById('add-user-error');
+            const btn = document.getElementById('btn-add-user');
+
+            if(!username || !password) {
+                errorBox.textContent = 'Username dan Password wajib diisi';
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = 'Memproses...';
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/admin/users/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, password, role })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('User berhasil ditambahkan');
+                    closeAddUserModal();
+                    loadUsers();
+                } else {
+                    errorBox.textContent = data.error || data.message || 'Gagal menambahkan user';
+                    errorBox.style.display = 'block';
+                }
+            } catch(e) {
+                errorBox.textContent = 'Terjadi kesalahan jaringan';
+                errorBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Tambah User';
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const data = await res.json();
+                const tbody = document.querySelector('#users-table tbody');
+                if (data.success && data.users.length > 0) {
+                    tbody.innerHTML = data.users.map(u => `
+                        <tr>
+                            <td>${u.username}</td>
+                            <td>${u.role}</td>
+                            <td><span class="badge ${u.status}">${u.status}</span></td>
+                            <td>
+                                ${u.status === 'pending' ? `
+                                    <button class="btn-sm btn-approve" onclick="updateUserStatus('${u.username}', 'approved')">Approve</button>
+                                    <button class="btn-sm btn-reject" onclick="updateUserStatus('${u.username}', 'rejected')">Reject</button>
+                                ` : (u.username !== 'admin' ? `
+                                    <button class="btn-sm btn-reject" onclick="updateUserStatus('${u.username}', 'rejected')" ${u.status === 'rejected' ? 'disabled' : ''}>Revoke</button>
+                                ` : '-')}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4">Tidak ada data pengguna</td></tr>';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function updateUserStatus(username, status) {
+            if(!confirm(`Yakin ingin mengubah status ${username} menjadi ${status}?`)) return;
+            try {
+                const res = await fetch('/api/admin/users/status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, status })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('Status berhasil diubah');
+                    loadUsers();
+                } else {
+                    alert(data.error || 'Gagal mengubah status');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                historyLogs = data.history || [];
+                renderHistoryTable();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        let currentPage = 1;
+        const rowsPerPage = 10;
+
+        function renderHistoryTable(resetPage = false) {
+            if (resetPage) currentPage = 1;
+            
+            const tbody = document.getElementById('history-body');
+            const search = document.getElementById('history-search').value.toLowerCase();
+            const size = document.getElementById('filter-ukuran').value.toLowerCase();
+            const filterTanggal = document.getElementById('filter-tanggal').value;
+            const filterGrade = document.getElementById('filter-grade').value;
+
+            // Pre-calculate grade
+            historyLogs.forEach(item => {
+                let gradeStr = 'B';
+                if (item.serial_number && item.serial_number.length >= 2) {
+                    const firstTwo = parseInt(item.serial_number.substring(0, 2), 10);
+                    if (!isNaN(firstTwo) && firstTwo >= 30) {
+                        gradeStr = 'A';
+                    }
+                }
+                item._calculatedGrade = gradeStr;
+            });
+            
+            const filtered = historyLogs.filter(item => {
+                const noStr = (item.nomor_container || '').toLowerCase();
+                const slotStr = (item.lokasi_slot || '').toLowerCase();
+                const sizeStr = (item.tipe_container || '').toLowerCase();
+                const dateStr = (item.waktu || '').toLowerCase();
+                
+                const matchSearch = noStr.includes(search) || slotStr.includes(search);
+                const matchSize = size ? sizeStr === size : true;
+                const matchDate = filterTanggal ? dateStr.includes(filterTanggal) : true;
+                const matchGrade = filterGrade ? item._calculatedGrade === filterGrade : true;
+
+                return matchSearch && matchSize && matchDate && matchGrade;
+            });
+
+            const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const paginated = filtered.slice(startIndex, startIndex + rowsPerPage);
+
+            if (paginated.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data kontainer.</td></tr>';
+                renderPagination(1, 1);
+                return;
+            }
+
+            tbody.innerHTML = paginated.map(item => {
+                const parts = (item.waktu || '').split(' ');
+                const tanggal = parts[0] || '-';
+                const jam = parts[1] ? (parts[1] + (parts[2] ? ' ' + parts[2] : '')) : '-';
+                
+                return `
+                <tr>
+                    <td>${tanggal}</td>
+                    <td>${jam}</td>
+                    <td>
+                        ${item.image_uri ? `<img src="${item.image_uri}" style="height:40px; cursor:pointer;" onclick="openImageModal('${item.image_uri}')">` : '-'}
+                    </td>
+                    <td>${item.tipe_container || '20ft'}</td>
+                    <td style="font-weight:700;">
+                        ${item.nomor_container || '-'}
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Grade ${item._calculatedGrade}</div>
+                    </td>
+                    <td>${item.lokasi_slot || '-'}</td>
+                </tr>
+            `}).join('');
+            
+            renderPagination(currentPage, totalPages);
+        }
+
+        function renderPagination(current, total) {
+            const container = document.getElementById('pagination-controls');
+            container.innerHTML = `
+                <button class="btn-sm" style="background:var(--primary); padding: 0.4rem 0.8rem;" ${current === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="currentPage--; renderHistoryTable()">Sebelumnya</button>
+                <span style="font-size:0.9rem; font-weight:600;">Halaman ${current} dari ${total}</span>
+                <button class="btn-sm" style="background:var(--primary); padding: 0.4rem 0.8rem;" ${current === total ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} onclick="currentPage++; renderHistoryTable()">Selanjutnya</button>
+            `;
+        }
+
+        function openImageModal(src) {
+            document.getElementById('modal-img').src = src;
+            document.getElementById('image-modal').style.display = 'flex';
+        }
+        function closeImageModal() {
+            document.getElementById('image-modal').style.display = 'none';
+        }
+
+        // Initialize
+        loadUsers();
+        loadHistory();
+    </script>
+</body>
+</html>

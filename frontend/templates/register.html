@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Akun - Container OCR & GPS Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #c8102e;
+            --primary-hover: #a50d26;
+            --bg-color: #f4f6f8;
+            --surface: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --success: #198754;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background-color: var(--surface);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            background-color: #e57373;
+            cursor: not-allowed;
+        }
+
+        .link-register {
+            display: block;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .link-register a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link-register a:hover {
+            text-decoration: underline;
+        }
+
+        .message-box {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .message-box.error {
+            color: #842029;
+            background-color: #f8d7da;
+            border: 1px solid #f5c2c7;
+        }
+
+        .message-box.success {
+            color: #0f5132;
+            background-color: #d1e7dd;
+            border: 1px solid #badbcc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2><i class="fa-solid fa-user-plus"></i> Pendaftaran</h2>
+        <p>Buat akun baru. Membutuhkan persetujuan admin.</p>
+
+        <div id="message-box" class="message-box"></div>
+
+        <form id="register-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Ex: Budi123" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Ex: rahasia123" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Konfirmasi Password</label>
+                <input type="password" id="confirm-password" placeholder="Ex: rahasia123" required>
+            </div>
+            
+            <button type="submit" id="btn-submit" class="btn-primary">
+                Daftar Akun <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+
+        <div class="link-register">
+            Sudah punya akun? <a href="/login">Masuk di sini</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            const msgBox = document.getElementById('message-box');
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+            if (!username || !password || !confirmPassword) return;
+
+            if (password !== confirmPassword) {
+                msgBox.textContent = 'Password dan Konfirmasi Password tidak cocok!';
+                msgBox.classList.add('error');
+                msgBox.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memproses...';
+            msgBox.style.display = 'none';
+            msgBox.className = 'message-box';
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    msgBox.textContent = data.message || 'Registrasi berhasil! Menunggu persetujuan admin.';
+                    msgBox.classList.add('success');
+                    msgBox.style.display = 'block';
+                    document.getElementById('register-form').reset();
+                    // Don't enable button to prevent double submit, let them go to login
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Berhasil';
+                } else {
+                    msgBox.textContent = data.error || data.message || 'Registrasi gagal';
+                    msgBox.classList.add('error');
+                    msgBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = 'Daftar Akun <i class="fa-solid fa-paper-plane"></i>';
+                }
+            } catch (err) {
+                msgBox.textContent = 'Terjadi kesalahan jaringan.';
+                msgBox.classList.add('error');
+                msgBox.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'Daftar Akun <i class="fa-solid fa-paper-plane"></i>';
+            }
+        });
+    </script>
+</body>
+</html>

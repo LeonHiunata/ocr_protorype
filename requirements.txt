@@ -1,6 +1,5 @@
 Flask
-paddlepaddle
-paddleocr
+google-genai
 opencv-python
-numpy
-pandas
+python-dotenv
+pyserial

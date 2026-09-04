@@ -1,6 +1,6 @@
 # Setup Instructions
 
-Follow these steps to set up the environment and run the Streamlit OCR application.
+Follow these steps to set up the environment and run the Flask OCR GPS application.
 
 ## 1. Create a Virtual Environment
 
@@ -26,20 +26,22 @@ Install all necessary dependencies by running:
 pip install -r requirements.txt
 ```
 
-Note: Installing EasyOCR might take some time as it downloads the necessary models and PyTorch dependencies on the first run.
+## 4. Setup Environment Variables
 
-## 4. Run the Streamlit Application
-
-Once installed, you can start the Streamlit web app with:
+Copy `.env.example` to `.env` and fill in your Gemini API key:
 
 ```powershell
-streamlit run run_app.py
+cp .env.example .env
 ```
+Make sure to set `GEMINI_API_KEY` in your `.env` file before running the application.
 
-## 5. Run the Batch Processing Script
+## 5. Run the Application
 
-To test the algorithm on all images in the `Dataset` folder, run:
+Once installed, you can start the Flask server with:
 
 ```powershell
-python process_dataset.py
+python run_app.py
 ```
+*(atau jalankan `python backend/app.py`)*
+
+The application will start at `http://127.0.0.1:5000`.
