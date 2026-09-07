@@ -1490,16 +1490,14 @@
             let viewMinY = minRy;
             let viewMaxY = maxRy;
 
-            if (appState.zoomTarget === 'B') {
-                viewMinX = minRx;
-                viewMaxX = minRx + 12.0;
-                viewMinY = minRy + 9.0;
-                viewMaxY = minRy + 15.0;
-            } else if (appState.zoomTarget === 'A') {
-                viewMinX = minRx;
-                viewMaxX = minRx + 12.0;
-                viewMinY = minRy;
-                viewMaxY = minRy + 9.0;
+            if (appState.zoomTarget === 'A') {
+                viewMinX = minRx; viewMaxX = minRx + 7.0; viewMinY = minRy; viewMaxY = minRy + 10.0;
+            } else if (appState.zoomTarget === 'B') {
+                viewMinX = minRx + 7.0; viewMaxX = minRx + 14.0; viewMinY = minRy; viewMaxY = minRy + 10.0;
+            } else if (appState.zoomTarget === 'C') {
+                viewMinX = minRx; viewMaxX = minRx + 7.0; viewMinY = minRy + 10.0; viewMaxY = minRy + 21.0;
+            } else if (appState.zoomTarget === 'D') {
+                viewMinX = minRx + 7.0; viewMaxX = minRx + 14.0; viewMinY = minRy + 10.0; viewMaxY = minRy + 21.0;
             }
 
             const padding = Math.max((viewMaxX - viewMinX) * 0.1, (viewMaxY - viewMinY) * 0.1, 4);
@@ -1527,14 +1525,14 @@
             ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
 
             ctx.save();
-            if (appState.zoomTarget === 'B') {
-                ctx.beginPath();
-                ctx.rect(0, 0, gridCanvas.width, mapY(minRy + 9.0));
-                ctx.clip();
-            } else if (appState.zoomTarget === 'A') {
-                ctx.beginPath();
-                ctx.rect(0, mapY(minRy + 9.0), gridCanvas.width, gridCanvas.height - mapY(minRy + 9.0));
-                ctx.clip();
+            if (appState.zoomTarget === 'A') {
+                ctx.beginPath(); ctx.rect(mapX(minRx), mapY(minRy + 10.0), mapX(minRx + 7.0) - mapX(minRx), mapY(minRy) - mapY(minRy + 10.0)); ctx.clip();
+            } else if (appState.zoomTarget === 'B') {
+                ctx.beginPath(); ctx.rect(mapX(minRx + 7.0), mapY(minRy + 10.0), mapX(minRx + 14.0) - mapX(minRx + 7.0), mapY(minRy) - mapY(minRy + 10.0)); ctx.clip();
+            } else if (appState.zoomTarget === 'C') {
+                ctx.beginPath(); ctx.rect(mapX(minRx), mapY(minRy + 21.0), mapX(minRx + 7.0) - mapX(minRx), mapY(minRy + 10.0) - mapY(minRy + 21.0)); ctx.clip();
+            } else if (appState.zoomTarget === 'D') {
+                ctx.beginPath(); ctx.rect(mapX(minRx + 7.0), mapY(minRy + 21.0), mapX(minRx + 14.0) - mapX(minRx + 7.0), mapY(minRy + 10.0) - mapY(minRy + 21.0)); ctx.clip();
             }
 
             // Draw Boundary Polygon
@@ -1546,16 +1544,43 @@
             ctx.lineWidth = 4; ctx.strokeStyle = "#eab308"; ctx.stroke();
 
             const customSlots = [];
-            // Block A (Bottom, 3 rows of 2 horizontal containers)
-            for (let r = 0; r < 3; r++) {
-                // Left column
-                customSlots.push({ label: 'A' + (r * 2 + 1), cx: minRx, cy: minRy + r * 3.0, w: 6.0, h: 3.0, block: 'A' });
-                // Right column
-                customSlots.push({ label: 'A' + (r * 2 + 2), cx: minRx + 6.0, cy: minRy + r * 3.0, w: 6.0, h: 3.0, block: 'A' });
+            let aIdx = 1, bIdx = 1, cIdx = 1, dIdx = 1;
+
+            // Block A: Bottom-Left (Horizontal 2x1)
+            for (let y = 0; y < 10; y += 1.0) {
+                for (let x = 0; x <= 5; x += 2.0) {
+                    let cx = minRx + x, cy = minRy + y;
+                    if (isCellFullyInPolygon(cx, cy, 2.0, 1.0, polygon)) {
+                        customSlots.push({ label: 'A' + aIdx++, cx, cy, w: 2.0, h: 1.0, block: 'A' });
+                    }
+                }
             }
-            // Block B (Top, B1-B4 on bottom row)
-            for (let c = 0; c < 4; c++) {
-                customSlots.push({ label: 'B' + (c + 1), cx: minRx + c * 3.0, cy: minRy + 9.0, w: 3.0, h: 6.0, block: 'B' });
+            // Block B: Bottom-Right (Vertical 1x2)
+            for (let y = 0; y < 10; y += 2.0) {
+                for (let x = 7; x <= 13; x += 1.0) {
+                    let cx = minRx + x, cy = minRy + y;
+                    if (isCellFullyInPolygon(cx, cy, 1.0, 2.0, polygon)) {
+                        customSlots.push({ label: 'B' + bIdx++, cx, cy, w: 1.0, h: 2.0, block: 'B' });
+                    }
+                }
+            }
+            // Block C: Top-Left (Vertical 1x2)
+            for (let y = 10; y < 21; y += 2.0) {
+                for (let x = 0; x <= 6; x += 1.0) {
+                    let cx = minRx + x, cy = minRy + y;
+                    if (isCellFullyInPolygon(cx, cy, 1.0, 2.0, polygon)) {
+                        customSlots.push({ label: 'C' + cIdx++, cx, cy, w: 1.0, h: 2.0, block: 'C' });
+                    }
+                }
+            }
+            // Block D: Top-Right (Horizontal 2x1)
+            for (let y = 10; y < 21; y += 1.0) {
+                for (let x = 7; x <= 13; x += 2.0) {
+                    let cx = minRx + x, cy = minRy + y;
+                    if (isCellFullyInPolygon(cx, cy, 2.0, 1.0, polygon)) {
+                        customSlots.push({ label: 'D' + dIdx++, cx, cy, w: 2.0, h: 1.0, block: 'D' });
+                    }
+                }
             }
 
             let targetRotatedX = null, targetRotatedY = null;
