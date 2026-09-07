@@ -1382,6 +1382,7 @@
             ocrData: null,
             ocrImageUri: null,
             gpsData: null,
+            confirmedSlot: null,  // slot yang dikunci saat tahap 3 selesai
             webcamStream: null,
             historyLogs: [],
             isFinished: false,
@@ -1667,7 +1668,8 @@
 
             if (autoDetectedSlot) {
                 document.getElementById('gps-val-slot').textContent = "SLOT " + autoDetectedSlot;
-                if (appState.gpsData) {
+                // Hanya perbarui gpsData.detected_slot jika tahap 3 belum dikonfirmasi
+                if (appState.gpsData && !appState.confirmedSlot) {
                     appState.gpsData.detected_slot = "SLOT " + autoDetectedSlot;
                 }
             }
@@ -2039,6 +2041,10 @@
                     appState.gpsData = data;
                     updateGPSDisplay(data);
                     appState.completedSteps.add(3);
+                    // Kunci slot saat ini agar tidak berubah di tahap berikutnya
+                    appState.confirmedSlot = (appState.gpsData && appState.gpsData.detected_slot)
+                        ? appState.gpsData.detected_slot
+                        : null;
                     updateStepUI();
                     showToast('Koordinat GPS berhasil diperbarui!', 'success');
                 }
@@ -2108,7 +2114,7 @@
             document.getElementById('sum-serial-check').textContent = `${ocr['Serial Number :'] || 'N/A'} / ${ocr['Check Number :'] || 'N/A'}`;
             document.getElementById('sum-grade').textContent = ocr['Grade'] || 'Grade : A';
 
-            document.getElementById('sum-slot').textContent = gps.detected_slot || 'SLOT H1';
+            document.getElementById('sum-slot').textContent = appState.confirmedSlot || gps.detected_slot || 'N/A';
 
             const lat = gps.avg_lat || gps.latitude || '-6.112607';
             const lon = gps.avg_lon || gps.longitude || '106.881780';
@@ -2130,7 +2136,7 @@
                 tipe_container: appState.selectedSize,
                 ocr_data: appState.ocrData || {},
                 gps_data: appState.gpsData || {},
-                lokasi: (appState.gpsData && appState.gpsData.detected_slot) ? appState.gpsData.detected_slot : 'SLOT H1',
+                lokasi: (appState.confirmedSlot || (appState.gpsData && appState.gpsData.detected_slot) || 'N/A').replace(/^SLOT\s*/i, ''),
                 image_uri: appState.rawImageUri || appState.ocrImageUri || ''
             };
 
@@ -2372,6 +2378,7 @@
             appState.selectedSize = null;
             appState.ocrData = null;
             appState.ocrImageUri = null;
+            appState.confirmedSlot = null;  // reset slot yang dikunci
             appState.completedSteps.clear();
 
             document.getElementById('size-card-20ft').classList.remove('selected');

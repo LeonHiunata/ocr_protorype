@@ -1,110 +1,119 @@
-import os
-import json
-import uuid
+"""
+core/auth_service.py — Autentikasi & manajemen user via PostgreSQL (Supabase).
+"""
+
 from werkzeug.security import generate_password_hash, check_password_hash
+from core.db import get_conn, release_conn
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
-USERS_FILE = os.path.join(DATA_DIR, 'users.json')
-
-# Pastikan folder data ada
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
 
 class AuthService:
+
+    # ─── Internal helpers ────────────────────────────────────────────────────
+
     @staticmethod
-    def _load_users():
-        if not os.path.exists(USERS_FILE):
-            # Inisialisasi default users jika belum ada
-            default_users = {
-                "admin": {
-                    "username": "admin",
-                    "password_hash": generate_password_hash("12345"),
-                    "role": "admin",
-                    "status": "approved"
-                },
-                "krani": {
-                    "username": "krani",
-                    "password_hash": generate_password_hash("12345"),
-                    "role": "krani",
-                    "status": "approved"
-                }
-            }
-            AuthService._save_users(default_users)
-            return default_users
-        
+    def _get_user(username: str) -> dict | None:
+        """Ambil satu user dari DB. Return dict atau None."""
+        conn = get_conn()
         try:
-            with open(USERS_FILE, 'r') as f:
-                return json.load(f)
-        except Exception:
-            return {}
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT username, password_hash, role, status FROM users WHERE username = %s",
+                    (username,)
+                )
+                row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                'username':      row[0],
+                'password_hash': row[1],
+                'role':          row[2],
+                'status':        row[3],
+            }
+        finally:
+            release_conn(conn)
+
+    # ─── Public API ──────────────────────────────────────────────────────────
 
     @staticmethod
-    def _save_users(users_data):
-        with open(USERS_FILE, 'w') as f:
-            json.dump(users_data, f, indent=4)
+    def authenticate_user(username: str, password: str):
+        """Return (True, user_dict) atau (False, pesan_error)."""
+        user = AuthService._get_user(username)
 
-    @staticmethod
-    def authenticate_user(username, password):
-        users = AuthService._load_users()
-        user = users.get(username)
-        
         if not user:
             return False, "User tidak ditemukan"
-            
+
         if not check_password_hash(user['password_hash'], password):
             return False, "Password salah"
-            
+
         if user['status'] == 'pending':
             return False, "Akun Anda sedang menunggu persetujuan Admin"
-            
+
         if user['status'] == 'rejected':
             return False, "Akun Anda telah ditolak oleh Admin"
-            
+
         return True, user
 
     @staticmethod
-    def register_user(username, password, role="krani", status="pending"):
-        users = AuthService._load_users()
-        if username in users:
+    def register_user(username: str, password: str, role: str = 'krani', status: str = 'pending'):
+        """Return (True, pesan) atau (False, pesan_error)."""
+        if AuthService._get_user(username):
             return False, "Username sudah digunakan"
-            
-        users[username] = {
-            "username": username,
-            "password_hash": generate_password_hash(password),
-            "role": role,
-            "status": status
-        }
-        AuthService._save_users(users)
-        
-        msg = "Registrasi berhasil, menunggu persetujuan admin" if status == "pending" else "User berhasil ditambahkan"
-        return True, msg
+
+        conn = get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO users (username, password_hash, role, status)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (username, generate_password_hash(password), role, status)
+                )
+            conn.commit()
+            msg = "Registrasi berhasil, menunggu persetujuan admin" if status == "pending" else "User berhasil ditambahkan"
+            return True, msg
+        except Exception as e:
+            conn.rollback()
+            return False, f"Gagal menyimpan user: {e}"
+        finally:
+            release_conn(conn)
 
     @staticmethod
-    def get_all_users():
-        # Hide password hash when returning to frontend
-        users = AuthService._load_users()
-        result = []
-        for u in users.values():
-            result.append({
-                "username": u["username"],
-                "role": u["role"],
-                "status": u["status"]
-            })
-        return result
+    def get_all_users() -> list:
+        """Return list semua user (tanpa password_hash)."""
+        conn = get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT username, role, status FROM users ORDER BY username")
+                rows = cur.fetchall()
+            return [{'username': r[0], 'role': r[1], 'status': r[2]} for r in rows]
+        finally:
+            release_conn(conn)
 
     @staticmethod
-    def update_user_status(username, new_status):
-        if new_status not in ['approved', 'rejected', 'pending']:
+    def update_user_status(username: str, new_status: str):
+        """Return (True, pesan) atau (False, pesan_error)."""
+        if new_status not in ('approved', 'rejected', 'pending'):
             return False, "Status tidak valid"
-            
-        users = AuthService._load_users()
-        if username not in users:
-            return False, "User tidak ditemukan"
-            
-        # Cegah pengubahan status admin default
+
         if username == 'admin':
             return False, "Tidak dapat mengubah status admin utama"
-            
-        users[username]['status'] = new_status
-        AuthService._save_users(users)
-        return True, f"Status user {username} berhasil diubah menjadi {new_status}"
+
+        user = AuthService._get_user(username)
+        if not user:
+            return False, "User tidak ditemukan"
+
+        conn = get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE users SET status = %s WHERE username = %s",
+                    (new_status, username)
+                )
+            conn.commit()
+            return True, f"Status user {username} berhasil diubah menjadi {new_status}"
+        except Exception as e:
+            conn.rollback()
+            return False, f"Gagal update status: {e}"
+        finally:
+            release_conn(conn)

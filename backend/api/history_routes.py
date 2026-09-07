@@ -5,7 +5,7 @@ import csv
 import io
 from datetime import datetime, timedelta, timezone
 from middleware.error_handler import APIError
-from core.history_service import load_history, save_history
+from core.history_service import load_history, save_history, save_record, delete_record, delete_records
 
 history_bp = Blueprint('history', __name__)
 
@@ -38,9 +38,7 @@ def send_to_database():
             'image_uri': image_uri
         }
 
-        history = load_history()
-        history.insert(0, record)
-        save_history(history)
+        save_record(record)
 
         print("\n" + "=" * 60)
         print("  DATA CONTAINER TERSIMPAN KE DATABASE")
@@ -74,9 +72,7 @@ def api_history():
 @history_bp.route('/api/history/<int:record_id>', methods=['DELETE'])
 def api_delete_history_item(record_id):
     """Endpoint menghapus 1 item record riwayat berdasarkan ID."""
-    history = load_history()
-    new_history = [item for item in history if str(item.get('id')) != str(record_id)]
-    save_history(new_history)
+    delete_record(record_id)
     return jsonify({'success': True, 'message': 'Record riwayat berhasil dihapus.'})
 
 @history_bp.route('/api/history/delete-selected', methods=['POST'])
@@ -84,12 +80,8 @@ def api_delete_selected_history():
     """Endpoint menghapus beberapa item record riwayat terpilih."""
     data = request.json or {}
     raw_ids = data.get('ids', [])
-    ids_to_delete = set(str(i) for i in raw_ids)
-    
-    history = load_history()
-    new_history = [item for item in history if str(item.get('id')) not in ids_to_delete]
-    save_history(new_history)
-    return jsonify({'success': True, 'message': f'{len(ids_to_delete)} record berhasil dihapus.'})
+    delete_records(raw_ids)
+    return jsonify({'success': True, 'message': f'{len(raw_ids)} record berhasil dihapus.'})
 
 @history_bp.route('/api/export/<format_type>', methods=['GET'])
 def api_export(format_type):

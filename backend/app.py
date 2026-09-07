@@ -7,6 +7,10 @@ import uuid
 from api import register_routes
 from middleware.security import login_required, admin_required
 
+# Run DB migrations (create tables if not exists) before anything else
+from core.migrations import run_migrations
+run_migrations()
+
 # Attempt to load GPS module to start background process
 try:
     from core import gps_reader
