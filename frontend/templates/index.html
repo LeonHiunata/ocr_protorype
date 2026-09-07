@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +8,32 @@
     <!-- Proj4js for UTM EPSG:32748 spatial conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             /* SPIL Base Colors (Constant across themes) */
             --primary: #c8102e;
             --primary-hover: #a30d25;
             --primary-light: rgba(200, 16, 46, 0.15);
-            
+
             --success: #3a9542;
             --success-hover: #2e7735;
             --success-light: rgba(58, 149, 66, 0.15);
-            
+
             --warning: #f59e0b;
             --danger: #c8102e;
             --purple: #8b5cf6;
-            
+
             --radius-sm: 8px;
             --radius-md: 14px;
             --radius-lg: 20px;
-            
+
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            
+
             /* Dark Theme (Default) Variables */
             --bg-color: #0b0f19;
             --body-bg: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%);
@@ -39,7 +41,7 @@
             --card-solid: #151e31;
             --border-color: rgba(255, 255, 255, 0.08);
             --border-active: rgba(200, 16, 46, 0.5);
-            
+
             --text-main: #ffffff;
             --text-muted: #e2e8f0;
             --text-dim: #94a3b8;
@@ -58,7 +60,7 @@
             --card-solid: #ffffff;
             --border-color: #e5e7eb;
             --border-active: rgba(200, 16, 46, 0.5);
-            
+
             --text-main: #1f2937;
             --text-muted: #6b7280;
             --text-dim: #9ca3af;
@@ -162,10 +164,11 @@
             align-items: center;
             gap: 0.4rem;
         }
-        
+
         .btn-logout:hover {
             background: rgba(200, 16, 46, 1) !important;
         }
+
         #theme-toggle:hover {
             background: rgba(0, 0, 0, 0.3) !important;
         }
@@ -248,6 +251,7 @@
             box-shadow: 0 0 16px var(--primary-light);
             transform: scale(1.1);
         }
+
         .step-item.active .step-label {
             color: var(--primary);
             font-weight: 700;
@@ -258,6 +262,7 @@
             border-color: var(--success);
             color: #fff;
         }
+
         .step-item.completed .step-label {
             color: var(--success);
         }
@@ -277,6 +282,7 @@
             background: var(--overlay-bg);
             z-index: 1;
         }
+
         .stepper-progress {
             height: 100%;
             background: linear-gradient(to right, var(--primary), var(--success));
@@ -301,8 +307,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .step-header {
@@ -346,6 +359,7 @@
             color: #fff;
             box-shadow: 0 4px 14px rgba(200, 16, 46, 0.3);
         }
+
         .btn-primary:hover:not(:disabled) {
             background: var(--primary-hover);
             transform: translateY(-1px);
@@ -356,6 +370,7 @@
             color: #fff;
             box-shadow: 0 4px 14px rgba(58, 149, 66, 0.3);
         }
+
         .btn-success:hover:not(:disabled) {
             background: var(--success-hover);
             transform: translateY(-1px);
@@ -366,6 +381,7 @@
             color: var(--text-main);
             border: 1px solid var(--border-color);
         }
+
         .btn-secondary:hover:not(:disabled) {
             background: var(--overlay-hover);
         }
@@ -375,6 +391,7 @@
             color: var(--primary);
             border: 1px solid rgba(200, 16, 46, 0.3);
         }
+
         .btn-danger:hover:not(:disabled) {
             background: rgba(200, 16, 46, 0.25);
         }
@@ -582,6 +599,7 @@
             padding: 0.6rem 0;
             border-bottom: 1px solid var(--overlay-bg);
         }
+
         .ocr-field-row:last-child {
             border-bottom: none;
         }
@@ -590,6 +608,7 @@
             font-size: 0.85rem;
             color: var(--text-muted);
         }
+
         .field-val {
             font-size: 0.95rem;
             font-weight: 700;
@@ -619,9 +638,24 @@
             font-size: 0.8rem;
             font-weight: 700;
         }
-        .grade-badge.a { background: rgba(58, 149, 66, 0.2); color: #3a9542; border: 1px solid var(--success); }
-        .grade-badge.b { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning); }
-        .grade-badge.c { background: rgba(200, 16, 46, 0.2); color: #c8102e; border: 1px solid var(--danger); }
+
+        .grade-badge.a {
+            background: rgba(58, 149, 66, 0.2);
+            color: #3a9542;
+            border: 1px solid var(--success);
+        }
+
+        .grade-badge.b {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid var(--warning);
+        }
+
+        .grade-badge.c {
+            background: rgba(200, 16, 46, 0.2);
+            color: #c8102e;
+            border: 1px solid var(--danger);
+        }
 
         /* ─── Step 3: GPS Telemetry ─── */
         .gps-grid {
@@ -696,6 +730,7 @@
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--overlay-bg);
         }
+
         .summary-section:last-child {
             border-bottom: none;
             margin-bottom: 0;
@@ -739,6 +774,7 @@
             font-size: 0.85rem;
             width: 240px;
         }
+
         .search-input:focus {
             outline: none;
             border-color: var(--primary);
@@ -806,18 +842,29 @@
         }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .spinner {
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
-            100% { transform: rotate(360deg); }
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body class="light-theme">
 
     <!-- ─── Header ─── -->
@@ -836,10 +883,12 @@
                 <div class="status-dot" id="gps-status-dot"></div>
                 <span id="gps-status-text">GPS Module Ready</span>
             </div>
-            <button class="btn btn-secondary" id="theme-toggle" onclick="toggleTheme()" style="padding: 0.4rem 0.8rem; border-radius: 20px;" title="Toggle Dark/Light Mode">
+            <button class="btn btn-secondary" id="theme-toggle" onclick="toggleTheme()"
+                style="padding: 0.4rem 0.8rem; border-radius: 20px;" title="Toggle Dark/Light Mode">
                 <i class="fa-solid fa-sun" id="theme-icon"></i>
             </button>
-            <button onclick="logout()" class="btn btn-danger" title="Logout" style="padding: 0.4rem 0.8rem; border-radius: 20px;">
+            <button onclick="logout()" class="btn btn-danger" title="Logout"
+                style="padding: 0.4rem 0.8rem; border-radius: 20px;">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -878,8 +927,10 @@
         <!-- ─── LANGKAH 1: Pemilihan Ukuran Kontainer ─── -->
         <div class="step-content active" id="step-view-1">
             <div class="step-header">
-                <h2><i class="fa-solid fa-ruler-combined" style="color: var(--primary);"></i> Langkah 1: Pemilihan Ukuran Kontainer</h2>
-                <p>Pilih dimensi ukuran kontainer yang sedang diinspeksi sebelum melanjutkan ke proses pengambilan foto.</p>
+                <h2><i class="fa-solid fa-ruler-combined" style="color: var(--primary);"></i> Langkah 1: Pemilihan
+                    Ukuran Kontainer</h2>
+                <p>Pilih dimensi ukuran kontainer yang sedang diinspeksi sebelum melanjutkan ke proses pengambilan foto.
+                </p>
             </div>
 
             <div class="size-grid">
@@ -913,7 +964,8 @@
         <!-- ─── LANGKAH 2: Pengambilan Foto & Eksekusi OCR ─── -->
         <div class="step-content" id="step-view-2">
             <div class="step-header">
-                <h2><i class="fa-solid fa-camera" style="color: var(--primary);"></i> Langkah 2: Pengambilan Foto & OCR</h2>
+                <h2><i class="fa-solid fa-camera" style="color: var(--primary);"></i> Langkah 2: Pengambilan Foto & OCR
+                </h2>
                 <p>Ambil foto nomor kontainer secara langsung via kamera atau upload file gambar.</p>
             </div>
 
@@ -929,19 +981,22 @@
             <!-- Tab Content Camera -->
             <div class="media-input-box" id="media-tab-camera">
                 <video id="webcam-stream" class="video-preview" autoplay playsinline style="display:none;"></video>
-                <img id="camera-snapshot-img" class="video-preview" style="display:none; border: 2px solid var(--primary);" alt="Snapshot Foto Captured">
+                <img id="camera-snapshot-img" class="video-preview"
+                    style="display:none; border: 2px solid var(--primary);" alt="Snapshot Foto Captured">
                 <canvas id="capture-canvas" style="display:none;"></canvas>
-                
+
                 <div id="camera-placeholder">
                     <i class="fa-solid fa-camera-retro" style="font-size: 3rem; color: var(--text-muted);"></i>
-                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Aktifkan kamera untuk mengambil foto kontainer.</p>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Aktifkan kamera untuk mengambil foto
+                        kontainer.</p>
                 </div>
 
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                     <button class="btn btn-secondary" id="btn-start-cam" onclick="startCamera()">
                         <i class="fa-solid fa-power-off"></i> Buka Kamera
                     </button>
-                    <button class="btn btn-primary" id="btn-capture-cam" style="display:none;" onclick="captureAndOCR()">
+                    <button class="btn btn-primary" id="btn-capture-cam" style="display:none;"
+                        onclick="captureAndOCR()">
                         <i class="fa-solid fa-camera"></i> Ambil Foto & Scan OCR
                     </button>
                 </div>
@@ -949,7 +1004,8 @@
 
             <!-- Tab Content File Upload -->
             <div class="media-input-box" id="media-tab-file" style="display:none;">
-                <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileUpload(event)">
+                <input type="file" id="file-input" accept="image/*" style="display:none;"
+                    onchange="handleFileUpload(event)">
                 <div class="upload-dropzone" onclick="document.getElementById('file-input').click()">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     <p style="font-weight: 600;">Klik atau seret file gambar kontainer ke sini</p>
@@ -961,11 +1017,13 @@
             <div id="ocr-results-container" style="display:none;">
                 <div class="ocr-preview-grid">
                     <div class="ocr-img-card">
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Foto Asli Captured</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Foto Asli
+                            Captured</p>
                         <img id="img-preview-original" src="" alt="Original Preview">
                     </div>
                     <div class="ocr-img-card">
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hasil Anotasi PaddleOCR</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hasil Anotasi
+                            LLM</p>
                         <img id="img-preview-annotated" src="" alt="OCR Annotated Preview">
                     </div>
                 </div>
@@ -981,7 +1039,8 @@
                     </div>
                     <div class="ocr-field-row">
                         <span class="field-label">Serial Number :</span>
-                        <input type="text" class="field-val" id="res-serial" value="-" oninput="updateContainerNumber()">
+                        <input type="text" class="field-val" id="res-serial" value="-"
+                            oninput="updateContainerNumber()">
                     </div>
                     <div class="ocr-field-row">
                         <span class="field-label">Check Number :</span>
@@ -1012,37 +1071,55 @@
         <!-- ─── LANGKAH 3: Deteksi GPS Real-Time & Visualisasi Mapping ─── -->
         <div class="step-content" id="step-view-3">
             <div class="step-header">
-                <h2><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> Langkah 3: Deteksi GPS & Mapping Real-Time</h2>
+                <h2><i class="fa-solid fa-location-crosshairs" style="color: var(--primary);"></i> Langkah 3: Deteksi
+                    GPS & Mapping Real-Time</h2>
                 <p>Membaca koordinat GPS dan pemetaan slot/blok kontainer di depo secara visual.</p>
             </div>
 
             <!-- Card Visualisasi Mapping Canvas Grid Depo -->
-            <div class="map-card" style="background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="map-card"
+                style="background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                        <h4
+                            style="font-size: 0.95rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
                             <i class="fa-solid fa-map-location-dot"></i> Pemetaan Spasial Grid & Tracking Beacon Rover
                         </h4>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Visualisasi grid slot depo kontainer & posisi fisik rover bergerak secara real-time</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Visualisasi grid
+                            slot depo kontainer & posisi fisik rover bergerak secara real-time</p>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
-                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #eab308; display: inline-block; border-radius: 2px;"></span> Area Depo</span>
-                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #3a9542; display: inline-block; border-radius: 2px;"></span> Slot Terdeteksi</span>
-                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: #c8102e; display: inline-block; border-radius: 50%;"></span> Rover 📍</span>
+                    <div
+                        style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span
+                                style="width: 10px; height: 10px; background: #eab308; display: inline-block; border-radius: 2px;"></span>
+                            Area Depo</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span
+                                style="width: 10px; height: 10px; background: #3a9542; display: inline-block; border-radius: 2px;"></span>
+                            Slot Terdeteksi</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span
+                                style="width: 10px; height: 10px; background: #c8102e; display: inline-block; border-radius: 50%;"></span>
+                            Rover 📍</span>
                     </div>
                 </div>
-                <div style="position: relative; width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: #050811; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
-                    <canvas id="depoGridCanvas" style="width: 100%; height: 440px; object-fit: contain; display: block;"></canvas>
+                <div
+                    style="position: relative; width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: #050811; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
+                    <canvas id="depoGridCanvas"
+                        style="width: 100%; height: 440px; object-fit: contain; display: block;"></canvas>
                 </div>
             </div>
 
             <div class="gps-slot-card">
                 <div class="slot-info">
-                    <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Deteksi Lokasi Blok Depo</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Deteksi Lokasi
+                        Blok Depo</p>
                     <h3 id="gps-val-slot">SLOT H1</h3>
                 </div>
                 <button class="btn btn-success" onclick="refreshGPSData()">
                     <i class="fa-solid fa-rotate" id="refresh-gps-icon"></i> Refresh / Ambil Ulang GPS
+                </button>
+                <button class="btn btn-primary" onclick="toggleZoom()" style="margin-left: 0.5rem;">
+                    <i class="fa-solid fa-search-plus"></i> Zoom ke Blok Terdeteksi
                 </button>
             </div>
 
@@ -1101,7 +1178,8 @@
         <!-- ─── LANGKAH 4: Konfirmasi & Penyimpanan Data ─── -->
         <div class="step-content" id="step-view-4">
             <div class="step-header">
-                <h2><i class="fa-solid fa-clipboard-check" style="color: var(--success);"></i> Langkah 4: Konfirmasi & Penyimpanan Data</h2>
+                <h2><i class="fa-solid fa-clipboard-check" style="color: var(--success);"></i> Langkah 4: Konfirmasi &
+                    Penyimpanan Data</h2>
                 <p>Periksa kembali seluruh ringkasan data sebelum disimpan ke basis data.</p>
             </div>
 
@@ -1136,7 +1214,8 @@
 
                     <!-- Seksi GPS -->
                     <div class="summary-section">
-                        <div class="summary-title"><i class="fa-solid fa-map-location-dot"></i> Koordinat & Lokasi Depo</div>
+                        <div class="summary-title"><i class="fa-solid fa-map-location-dot"></i> Koordinat & Lokasi Depo
+                        </div>
                         <div class="summary-grid">
                             <div>
                                 <span class="field-label">Lokasi Slot Blok:</span>
@@ -1171,13 +1250,17 @@
             </div>
 
             <!-- Save Success Box with Direct Button back to Step 1 -->
-            <div id="save-success-box" style="display:none; background: rgba(16, 185, 129, 0.12); border: 2px solid var(--success); border-radius: var(--radius-md); padding: 2rem; text-align: center; margin-top: 1rem;">
-                <i class="fa-solid fa-circle-check" style="font-size: 3rem; color: var(--success); margin-bottom: 0.75rem;"></i>
+            <div id="save-success-box"
+                style="display:none; background: rgba(16, 185, 129, 0.12); border: 2px solid var(--success); border-radius: var(--radius-md); padding: 2rem; text-align: center; margin-top: 1rem;">
+                <i class="fa-solid fa-circle-check"
+                    style="font-size: 3rem; color: var(--success); margin-bottom: 0.75rem;"></i>
                 <h3 style="color: #3a9542; font-weight: 800; font-size: 1.4rem;">Data Kontainer Berhasil Disimpan!</h3>
-                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">Data inspeksi telah dicatat secara persisten ke database depo.</p>
-                
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">Data inspeksi telah
+                    dicatat secara persisten ke database depo.</p>
+
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.75rem; flex-wrap: wrap;">
-                    <button class="btn btn-primary" style="padding: 0.85rem 1.6rem; font-size: 1rem;" onclick="resetWorkflowNewInput()">
+                    <button class="btn btn-primary" style="padding: 0.85rem 1.6rem; font-size: 1rem;"
+                        onclick="resetWorkflowNewInput()">
                         <i class="fa-solid fa-rotate-left"></i> Input Data Baru (Kembali ke Langkah 1)
                     </button>
                     <button class="btn btn-secondary" style="padding: 0.85rem 1.4rem;" onclick="goToStep(5)">
@@ -1191,7 +1274,8 @@
         <!-- ─── LANGKAH 5: Riwayat & Log Data Tersimpan ─── -->
         <div class="step-content" id="step-view-5">
             <div class="step-header">
-                <h2><i class="fa-solid fa-database" style="color: var(--purple);"></i> Langkah 5: Riwayat / Log Data Tersimpan</h2>
+                <h2><i class="fa-solid fa-database" style="color: var(--purple);"></i> Langkah 5: Riwayat / Log Data
+                    Tersimpan</h2>
                 <p>Daftar riwayat data kontainer yang berhasil diinspeksi dan disimpan.</p>
             </div>
 
@@ -1206,23 +1290,31 @@
                     <a href="/api/export/json" class="btn btn-secondary" style="font-size: 0.8rem;">
                         <i class="fa-solid fa-file-code" style="color: var(--primary);"></i> Ekspor JSON
                     </a>
-                    <button class="btn btn-danger" id="btn-delete-selected" disabled style="font-size: 0.8rem;" onclick="deleteSelectedRecords()">
+                    <button class="btn btn-danger" id="btn-delete-selected" disabled style="font-size: 0.8rem;"
+                        onclick="deleteSelectedRecords()">
                         <i class="fa-solid fa-trash-can"></i> Hapus Terpilih
                     </button>
-                    <button class="btn btn-secondary" style="font-size: 0.8rem; color: #c8102e; border-color: rgba(200, 16, 46, 0.3);" onclick="clearHistoryLog()">
+                    <button class="btn btn-secondary"
+                        style="font-size: 0.8rem; color: #c8102e; border-color: rgba(200, 16, 46, 0.3);"
+                        onclick="clearHistoryLog()">
                         <i class="fa-solid fa-dumpster"></i> Hapus Semua Log
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <input type="text" class="search-input" id="history-search" placeholder="Cari bebas (No/Slot/Tgl)..." oninput="renderHistoryTable(true)" style="flex: 1; min-width: 150px;">
-                    <input type="date" class="search-input" id="filter-tanggal" oninput="renderHistoryTable(true)" style="width: auto;">
-                    <select class="search-input" id="filter-ukuran" onchange="renderHistoryTable(true)" style="width: auto; appearance: auto; color: inherit;">
+                    <input type="text" class="search-input" id="history-search"
+                        placeholder="Cari bebas (No/Slot/Tgl)..." oninput="renderHistoryTable(true)"
+                        style="flex: 1; min-width: 150px;">
+                    <input type="date" class="search-input" id="filter-tanggal" oninput="renderHistoryTable(true)"
+                        style="width: auto;">
+                    <select class="search-input" id="filter-ukuran" onchange="renderHistoryTable(true)"
+                        style="width: auto; appearance: auto; color: inherit;">
                         <option value="">Semua Ukuran</option>
                         <option value="20ft">20ft</option>
                         <option value="40ft">40ft</option>
                     </select>
-                    <select class="search-input" id="filter-grade" onchange="renderHistoryTable(true)" style="width: auto; appearance: auto; color: inherit;">
+                    <select class="search-input" id="filter-grade" onchange="renderHistoryTable(true)"
+                        style="width: auto; appearance: auto; color: inherit;">
                         <option value="">Semua Grade</option>
                         <option value="A">Grade A (Serial >= 30)</option>
                         <option value="B">Grade B (Serial < 30)</option>
@@ -1235,7 +1327,8 @@
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">
-                                <input type="checkbox" id="select-all-history" onchange="toggleSelectAllHistory(this.checked)" title="Pilih Semua">
+                                <input type="checkbox" id="select-all-history"
+                                    onchange="toggleSelectAllHistory(this.checked)" title="Pilih Semua">
                             </th>
                             <th>Tanggal</th>
                             <th>Jam</th>
@@ -1251,13 +1344,15 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- Pagination Controls -->
-            <div id="history-pagination-controls" style="margin-top: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+            <div id="history-pagination-controls"
+                style="margin-top: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
             </div>
 
             <div style="display: flex; justify-content: center; margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="resetWorkflowNewInput()" style="width: 100%; max-width: 500px; padding: 1rem; font-size: 1.1rem;">
+                <button class="btn btn-primary" onclick="resetWorkflowNewInput()"
+                    style="width: 100%; max-width: 500px; padding: 1rem; font-size: 1.1rem;">
                     <i class="fa-solid fa-circle-plus"></i> Input Data Baru (Reset Alur)
                 </button>
             </div>
@@ -1266,9 +1361,13 @@
     </div>
 
     <!-- Image Modal -->
-    <div id="image-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;" onclick="closeImageModal()">
-        <span style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
-        <img id="modal-img" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+    <div id="image-modal"
+        style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;"
+        onclick="closeImageModal()">
+        <span
+            style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
+        <img id="modal-img"
+            style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
     </div>
 
     <!-- Toast Notifications Container -->
@@ -1285,8 +1384,26 @@
             gpsData: null,
             webcamStream: null,
             historyLogs: [],
-            isFinished: false
+            isFinished: false,
+            zoomTarget: 'ALL'
         };
+
+        function toggleZoom() {
+            if (appState.gpsData && appState.gpsData.detected_slot) {
+                const slot = appState.gpsData.detected_slot.replace('SLOT ', '');
+                const block = slot.charAt(0);
+                if (appState.zoomTarget === block) {
+                    appState.zoomTarget = 'ALL';
+                    showToast('Zoom dikembalikan ke seluruh area', 'info');
+                } else {
+                    appState.zoomTarget = block;
+                    showToast('Zoom ke Blok ' + block, 'success');
+                }
+            } else {
+                appState.zoomTarget = 'ALL';
+                showToast('Belum ada slot terdeteksi untuk di-zoom', 'warning');
+            }
+        }
 
         // ─── Real-Time Depo Mapping Canvas Engine ───
         if (window.proj4) {
@@ -1367,10 +1484,31 @@
             if (!polygonData) return;
             const { polygon, minRx, maxRx, minRy, maxRy } = polygonData;
 
-            const padding = Math.max((maxRx - minRx) * 0.1, (maxRy - minRy) * 0.1, 4);
-            const viewMinX = minRx - padding, viewMaxX = maxRx + padding;
-            const viewMinY = minRy - padding, viewMaxY = maxRy + padding;
-            const viewWidth = viewMaxX - viewMinX, viewHeight = viewMaxY - viewMinY;
+            let viewMinX = minRx;
+            let viewMaxX = maxRx;
+            let viewMinY = minRy;
+            let viewMaxY = maxRy;
+
+            if (appState.zoomTarget === 'B') {
+                viewMinX = minRx;
+                viewMaxX = minRx + 12.0;
+                viewMinY = minRy + 9.0;
+                viewMaxY = minRy + 15.0;
+            } else if (appState.zoomTarget === 'A') {
+                viewMinX = minRx;
+                viewMaxX = minRx + 12.0;
+                viewMinY = minRy;
+                viewMaxY = minRy + 9.0;
+            }
+
+            const padding = Math.max((viewMaxX - viewMinX) * 0.1, (viewMaxY - viewMinY) * 0.1, 4);
+            viewMinX -= padding;
+            viewMaxX += padding;
+            viewMinY -= padding;
+            viewMaxY += padding;
+
+            const viewWidth = viewMaxX - viewMinX;
+            const viewHeight = viewMaxY - viewMinY;
             const aspectRatio = viewHeight / viewWidth;
 
             const targetWidth = 1200;
@@ -1387,6 +1525,17 @@
 
             ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
 
+            ctx.save();
+            if (appState.zoomTarget === 'B') {
+                ctx.beginPath();
+                ctx.rect(0, 0, gridCanvas.width, mapY(minRy + 9.0));
+                ctx.clip();
+            } else if (appState.zoomTarget === 'A') {
+                ctx.beginPath();
+                ctx.rect(0, mapY(minRy + 9.0), gridCanvas.width, gridCanvas.height - mapY(minRy + 9.0));
+                ctx.clip();
+            }
+
             // Draw Boundary Polygon
             ctx.beginPath();
             ctx.moveTo(mapX(polygon[0].x), mapY(polygon[0].y));
@@ -1395,25 +1544,18 @@
             ctx.fillStyle = "rgba(234, 179, 8, 0.16)"; ctx.fill();
             ctx.lineWidth = 4; ctx.strokeStyle = "#eab308"; ctx.stroke();
 
-            const numCols = Math.ceil((maxRx - minRx) / CONTAINER_LENGTH);
-            const numRows = Math.ceil((maxRy - minRy) / CONTAINER_WIDTH);
-
-            const validCols = new Set();
-            const validRows = new Set();
-            for (let c = 0; c <= numCols; c++) {
-                for (let r = 0; r <= numRows; r++) {
-                    const cx0 = minRx + c * CONTAINER_LENGTH;
-                    const cy0 = minRy + r * CONTAINER_WIDTH;
-                    if (isCellFullyInPolygon(cx0, cy0, CONTAINER_LENGTH, CONTAINER_WIDTH, polygon)) {
-                        validCols.add(c);
-                        validRows.add(r);
-                    }
-                }
+            const customSlots = [];
+            // Block A (Bottom, 3 rows of 2 horizontal containers)
+            for (let r = 0; r < 3; r++) {
+                // Left column
+                customSlots.push({ label: 'A' + (r * 2 + 1), cx: minRx, cy: minRy + r * 3.0, w: 6.0, h: 3.0, block: 'A' });
+                // Right column
+                customSlots.push({ label: 'A' + (r * 2 + 2), cx: minRx + 6.0, cy: minRy + r * 3.0, w: 6.0, h: 3.0, block: 'A' });
             }
-            const sortedCols = Array.from(validCols).sort((a, b) => a - b);
-            const sortedRows = Array.from(validRows).sort((a, b) => a - b);
-            const colOffset = sortedCols.length > 0 ? sortedCols[0] : 0;
-            const rowOffset = sortedRows.length > 0 ? sortedRows[0] : 0;
+            // Block B (Top, B1-B4 on bottom row)
+            for (let c = 0; c < 4; c++) {
+                customSlots.push({ label: 'B' + (c + 1), cx: minRx + c * 3.0, cy: minRy + 9.0, w: 3.0, h: 6.0, block: 'B' });
+            }
 
             let targetRotatedX = null, targetRotatedY = null;
             if (appState.gpsData && appState.gpsData.easting && appState.gpsData.northing) {
@@ -1424,35 +1566,37 @@
                 targetRotatedY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
             }
 
-            let autoDetectedSlot = null;
-
-            for (let c = 0; c <= numCols; c++) {
-                for (let r = 0; r <= numRows; r++) {
-                    const cx = minRx + c * CONTAINER_LENGTH;
-                    const cy = minRy + r * CONTAINER_WIDTH;
-
-                    if (!isCellFullyInPolygon(cx, cy, CONTAINER_LENGTH, CONTAINER_WIDTH, polygon)) {
-                        continue;
-                    }
-
-                    const colLetter = getColumnLetter(c - colOffset);
-                    const rowNumber = (r - rowOffset) + 1;
-                    const slotLabel = `${colLetter}${rowNumber}`;
-
-                    const eps = 0.2;
-                    let isTargetCell = false;
-                    if (targetRotatedX !== null && targetRotatedY !== null) {
-                        if (targetRotatedX >= cx - eps && targetRotatedX <= cx + CONTAINER_LENGTH + eps &&
-                            targetRotatedY >= cy - eps && targetRotatedY <= cy + CONTAINER_WIDTH + eps) {
-                            isTargetCell = true;
-                            autoDetectedSlot = slotLabel;
+            let bestSlot = null;
+            let bestDistSq = Infinity;
+            if (targetRotatedX !== null && targetRotatedY !== null) {
+                const eps = 0.5;
+                for (const slot of customSlots) {
+                    const { cx, cy, w: cWidth, h: cHeight } = slot;
+                    if (targetRotatedX >= cx - eps && targetRotatedX <= cx + cWidth + eps &&
+                        targetRotatedY >= cy - eps && targetRotatedY <= cy + cHeight + eps) {
+                        
+                        const centerX = cx + cWidth / 2;
+                        const centerY = cy + cHeight / 2;
+                        const distSq = (targetRotatedX - centerX) ** 2 + (targetRotatedY - centerY) ** 2;
+                        
+                        if (distSq < bestDistSq) {
+                            bestDistSq = distSq;
+                            bestSlot = slot;
                         }
                     }
+                }
+            }
+            let autoDetectedSlot = bestSlot ? bestSlot.label : null;
 
-                    const px = mapX(cx);
-                    const py = mapY(cy + CONTAINER_WIDTH);
-                    const pWidth = CONTAINER_LENGTH * scale;
-                    const pHeight = CONTAINER_WIDTH * scale;
+            for (const slot of customSlots) {
+                const { label: slotLabel, cx, cy, w: cWidth, h: cHeight, block } = slot;
+
+                const isTargetCell = (bestSlot !== null && bestSlot.label === slotLabel);
+
+                const px = mapX(cx);
+                const py = mapY(cy + cHeight);
+                const pWidth = cWidth * scale;
+                const pHeight = cHeight * scale;
 
                     ctx.beginPath();
                     ctx.rect(px, py, pWidth, pHeight);
@@ -1475,7 +1619,7 @@
                     ctx.stroke();
 
                     // Text
-                    const fontSize = Math.max(22, Math.floor(pHeight * 0.45));
+                    const fontSize = Math.max(22, Math.floor(Math.min(pWidth, pHeight) * 0.45));
                     ctx.font = `900 ${fontSize}px 'Inter', sans-serif`;
                     ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
@@ -1483,7 +1627,6 @@
                     ctx.strokeText(slotLabel, px + pWidth / 2, py + pHeight / 2);
                     ctx.fillStyle = "#ffffff";
                     ctx.fillText(slotLabel, px + pWidth / 2, py + pHeight / 2);
-                }
             }
 
             // Draw Trail
@@ -1524,8 +1667,11 @@
 
             if (autoDetectedSlot) {
                 document.getElementById('gps-val-slot').textContent = "SLOT " + autoDetectedSlot;
-                if (appState.gpsData) appState.gpsData.detected_slot = "SLOT " + autoDetectedSlot;
+                if (appState.gpsData) {
+                    appState.gpsData.detected_slot = "SLOT " + autoDetectedSlot;
+                }
             }
+            ctx.restore();
         }
 
         // Animation Loop for Real-Time Canvas Mapping
@@ -1570,7 +1716,7 @@
             updateStepUI();
             fetchGPSStatus();
             loadHistoryLogs();
-            
+
             // Start live GPS telemetry update loop
             setInterval(fetchLiveLocation, 1000);
         });
@@ -1672,7 +1818,7 @@
                     video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
                 appState.webcamStream = stream;
-                
+
                 const videoEl = document.getElementById('webcam-stream');
                 videoEl.srcObject = stream;
                 videoEl.style.display = 'block';
@@ -1693,13 +1839,13 @@
             }
             const videoEl = document.getElementById('webcam-stream');
             if (videoEl) videoEl.style.display = 'none';
-            
+
             const btnCapture = document.getElementById('btn-capture-cam');
             if (btnCapture) btnCapture.style.display = 'none';
-            
+
             const btnStart = document.getElementById('btn-start-cam');
             if (btnStart) btnStart.style.display = 'inline-flex';
-            
+
             const placeholder = document.getElementById('camera-placeholder');
             if (placeholder) placeholder.style.display = 'block';
         }
@@ -1707,7 +1853,7 @@
         function captureAndOCR() {
             const videoEl = document.getElementById('webcam-stream');
             const canvasEl = document.getElementById('capture-canvas');
-            
+
             if (!videoEl || videoEl.readyState !== 4) {
                 showToast('Stream kamera belum siap.', 'warning');
                 return;
@@ -1746,8 +1892,8 @@
         }
 
         async function processOCRImage(base64ImageUri) {
-            showToast('Menjalankan pemrosesan OCR PaddleOCR...', 'info');
-            
+            showToast('Menjalankan pemrosesan OCR LLM...', 'info');
+
             try {
                 const response = await fetch('/process-camera', {
                     method: 'POST',
@@ -1795,12 +1941,12 @@
             const serialInput = document.getElementById('res-serial');
             const checkInput = document.getElementById('res-check');
             const containerDisplay = document.getElementById('res-no-container');
-            
+
             let serialStr = serialInput.value.trim();
             if (serialStr === '-' || serialStr === 'N/A') serialStr = '';
             let checkStr = checkInput.value.trim();
             if (checkStr === '-' || checkStr === 'N/A') checkStr = '';
-            
+
             const newContainerNumber = "SPNU" + serialStr + checkStr;
             containerDisplay.textContent = newContainerNumber;
 
@@ -1817,7 +1963,7 @@
                 gradeBadge.textContent = gradeStr;
                 gradeBadge.className = 'grade-badge ' + (gradeStr.includes('A') ? 'a' : gradeStr.includes('B') ? 'b' : 'c');
             }
-            
+
             if (appState.ocrData) {
                 appState.ocrData['Nomor Container :'] = newContainerNumber;
                 appState.ocrData['Serial Number :'] = serialStr;
@@ -1829,11 +1975,11 @@
         function resetStep2Data() {
             appState.ocrData = null;
             appState.ocrImageUri = null;
-            
+
             document.getElementById('ocr-results-container').style.display = 'none';
             document.getElementById('btn-retake-ocr').style.display = 'none';
             document.getElementById('btn-next-step2').disabled = true;
-            
+
             const snapImg = document.getElementById('camera-snapshot-img');
             if (snapImg) snapImg.style.display = 'none';
 
@@ -1886,7 +2032,7 @@
             try {
                 const res = await fetch('/check-location');
                 const data = await res.json();
-                
+
                 if (data.error) {
                     showToast(data.error, 'warning');
                 } else {
@@ -1907,7 +2053,7 @@
             const lat = data.avg_lat || data.latitude || -6.112607;
             const lon = data.avg_lon || data.longitude || 106.881780;
             const alt = data.avg_alt || data.altitude || 12.5;
-            
+
             // Compute UTM if missing
             if ((!data.easting || !data.northing) && window.proj4) {
                 const utm = proj4("EPSG:4326", "EPSG:32748", [parseFloat(lon), parseFloat(lat)]);
@@ -1963,15 +2109,15 @@
             document.getElementById('sum-grade').textContent = ocr['Grade'] || 'Grade : A';
 
             document.getElementById('sum-slot').textContent = gps.detected_slot || 'SLOT H1';
-            
+
             const lat = gps.avg_lat || gps.latitude || '-6.112607';
             const lon = gps.avg_lon || gps.longitude || '106.881780';
             document.getElementById('sum-latlon').textContent = `${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}`;
-            
+
             const easting = gps.easting || '708241.53';
             const northing = gps.northing || '9323986.32';
             document.getElementById('sum-utm').textContent = `${easting}E / ${northing}N (${gps.utm_zone || '48S'})`;
-            
+
             document.getElementById('sum-time').textContent = gps.time_wib || new Date().toLocaleString('id-ID');
         }
 
@@ -2001,7 +2147,7 @@
                     appState.isFinished = true;
                     appState.completedSteps.add(4);
                     appState.completedSteps.add(5);
-                    
+
                     // Directly load history and transition to Step 5 (Riwayat)
                     await loadHistoryLogs();
                     goToStep(5);
@@ -2035,7 +2181,7 @@
 
         function renderHistoryTable(resetPage = false) {
             if (resetPage) historyCurrentPage = 1;
-            
+
             const tbody = document.getElementById('history-table-body');
             const searchQuery = (document.getElementById('history-search').value || '').toLowerCase();
             const filterTanggal = document.getElementById('filter-tanggal').value;
@@ -2059,11 +2205,11 @@
                 const slotStr = (item.lokasi_slot || '').toLowerCase();
                 const dateStr = (item.waktu || '').toLowerCase();
                 const sizeStr = (item.tipe_container || '').toLowerCase();
-                
-                const searchMatch = noStr.includes(searchQuery) || 
-                       slotStr.includes(searchQuery) ||
-                       dateStr.includes(searchQuery) ||
-                       sizeStr.includes(searchQuery);
+
+                const searchMatch = noStr.includes(searchQuery) ||
+                    slotStr.includes(searchQuery) ||
+                    dateStr.includes(searchQuery) ||
+                    sizeStr.includes(searchQuery);
 
                 let dateMatch = true;
                 if (filterTanggal) {
@@ -2110,7 +2256,7 @@
                 const parts = (item.waktu || '').split(' ');
                 const tanggal = parts[0] || '-';
                 const jam = parts[1] ? (parts[1] + (parts[2] ? ' ' + parts[2] : '')) : '-';
-                
+
                 return `
                 <tr>
                     <td style="text-align: center;">
@@ -2136,7 +2282,7 @@
                     </td>
                 </tr>
             `}).join('');
-            
+
             renderHistoryPagination(historyCurrentPage, totalPages);
         }
 
@@ -2285,10 +2431,11 @@
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 window.location.href = '/login';
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
             }
         }
     </script>
 </body>
+
 </html>

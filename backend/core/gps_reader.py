@@ -119,12 +119,12 @@ def _parse_gga_line(line):
 def _generate_simulated_step(step_idx):
     """Menghasilkan koordinat rover simulasi yang bergerak mengelilingi 6 titik survey yard."""
     waypoints = [
-        (106.88178028, -6.11260706),  # P1
-        (106.88190898, -6.11251261),  # P2
-        (106.88187588, -6.11246944),  # P3
-        (106.88189726, -6.11245381),  # P4
-        (106.88185392, -6.11239707),  # P5
-        (106.88170742, -6.11250445)   # P6
+        (106.88180879, -6.11254890),
+        (106.88187314, -6.11250167),
+        (106.88185659, -6.11248009),
+        (106.88186728, -6.11247228),
+        (106.88184560, -6.11244390),
+        (106.88177236, -6.11249759)
     ]
     num_wp = len(waypoints)
     sub_steps = 25  # jumlah langkah halus antar waypoint
