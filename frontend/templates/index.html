@@ -1390,19 +1390,29 @@
         };
 
         function toggleZoom() {
-            if (appState.gpsData && appState.gpsData.detected_slot) {
-                const slot = appState.gpsData.detected_slot.replace('SLOT ', '');
-                const block = slot.charAt(0);
-                if (appState.zoomTarget === block) {
+            const uiText = document.getElementById('gps-val-slot').textContent || '';
+            const slotStr = uiText.replace('SLOT ', '').trim();
+            
+            if (slotStr === 'No Container' || slotStr === 'Out of Bounds' || slotStr === 'N/A' || !slotStr || slotStr.startsWith('E')) {
+                // Ignore backend fallback 'E' blocks if not a valid A,B,C,D block
+                if (slotStr.startsWith('E') && slotStr.length > 1 && !isNaN(slotStr.charAt(1))) {
                     appState.zoomTarget = 'ALL';
-                    showToast('Zoom dikembalikan ke seluruh area', 'info');
-                } else {
-                    appState.zoomTarget = block;
-                    showToast('Zoom ke Blok ' + block, 'success');
+                    showToast('Belum ada blok terdeteksi (Area Kosong)', 'warning');
+                    return;
                 }
-            } else {
+                
                 appState.zoomTarget = 'ALL';
-                showToast('Belum ada slot terdeteksi untuk di-zoom', 'warning');
+                showToast('Belum ada blok terdeteksi (' + (slotStr || 'Unknown') + ')', 'warning');
+                return;
+            }
+
+            const block = slotStr.charAt(0);
+            if (appState.zoomTarget === block) {
+                appState.zoomTarget = 'ALL';
+                showToast('Zoom dikembalikan ke seluruh area', 'info');
+            } else {
+                appState.zoomTarget = block;
+                showToast('Zoom ke Blok ' + block, 'success');
             }
         }
 
@@ -1485,64 +1495,6 @@
             if (!polygonData) return;
             const { polygon, minRx, maxRx, minRy, maxRy } = polygonData;
 
-            let viewMinX = minRx;
-            let viewMaxX = maxRx;
-            let viewMinY = minRy;
-            let viewMaxY = maxRy;
-
-            if (appState.zoomTarget === 'A') {
-                viewMinX = minRx; viewMaxX = minRx + 7.0; viewMinY = minRy; viewMaxY = minRy + 10.0;
-            } else if (appState.zoomTarget === 'B') {
-                viewMinX = minRx + 7.0; viewMaxX = minRx + 14.0; viewMinY = minRy; viewMaxY = minRy + 10.0;
-            } else if (appState.zoomTarget === 'C') {
-                viewMinX = minRx; viewMaxX = minRx + 7.0; viewMinY = minRy + 10.0; viewMaxY = minRy + 21.0;
-            } else if (appState.zoomTarget === 'D') {
-                viewMinX = minRx + 7.0; viewMaxX = minRx + 14.0; viewMinY = minRy + 10.0; viewMaxY = minRy + 21.0;
-            }
-
-            const padding = Math.max((viewMaxX - viewMinX) * 0.1, (viewMaxY - viewMinY) * 0.1, 4);
-            viewMinX -= padding;
-            viewMaxX += padding;
-            viewMinY -= padding;
-            viewMaxY += padding;
-
-            const viewWidth = viewMaxX - viewMinX;
-            const viewHeight = viewMaxY - viewMinY;
-            const aspectRatio = viewHeight / viewWidth;
-
-            const targetWidth = 1200;
-            const targetHeight = Math.round(targetWidth * aspectRatio);
-
-            if (gridCanvas.width !== targetWidth || gridCanvas.height !== targetHeight) {
-                gridCanvas.width = targetWidth;
-                gridCanvas.height = targetHeight;
-            }
-
-            const scale = gridCanvas.width / viewWidth;
-            const mapX = (x) => (x - viewMinX) * scale;
-            const mapY = (y) => (viewMaxY - y) * scale;
-
-            ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
-
-            ctx.save();
-            if (appState.zoomTarget === 'A') {
-                ctx.beginPath(); ctx.rect(mapX(minRx), mapY(minRy + 10.0), mapX(minRx + 7.0) - mapX(minRx), mapY(minRy) - mapY(minRy + 10.0)); ctx.clip();
-            } else if (appState.zoomTarget === 'B') {
-                ctx.beginPath(); ctx.rect(mapX(minRx + 7.0), mapY(minRy + 10.0), mapX(minRx + 14.0) - mapX(minRx + 7.0), mapY(minRy) - mapY(minRy + 10.0)); ctx.clip();
-            } else if (appState.zoomTarget === 'C') {
-                ctx.beginPath(); ctx.rect(mapX(minRx), mapY(minRy + 21.0), mapX(minRx + 7.0) - mapX(minRx), mapY(minRy + 10.0) - mapY(minRy + 21.0)); ctx.clip();
-            } else if (appState.zoomTarget === 'D') {
-                ctx.beginPath(); ctx.rect(mapX(minRx + 7.0), mapY(minRy + 21.0), mapX(minRx + 14.0) - mapX(minRx + 7.0), mapY(minRy + 10.0) - mapY(minRy + 21.0)); ctx.clip();
-            }
-
-            // Draw Boundary Polygon
-            ctx.beginPath();
-            ctx.moveTo(mapX(polygon[0].x), mapY(polygon[0].y));
-            for (let i = 1; i < polygon.length; i++) ctx.lineTo(mapX(polygon[i].x), mapY(polygon[i].y));
-            ctx.closePath();
-            ctx.fillStyle = "rgba(234, 179, 8, 0.16)"; ctx.fill();
-            ctx.lineWidth = 4; ctx.strokeStyle = "#eab308"; ctx.stroke();
-
             const customSlots = [];
             let aIdx = 1, bIdx = 1, cIdx = 1, dIdx = 1;
 
@@ -1582,6 +1534,71 @@
                     }
                 }
             }
+
+            let viewMinX = minRx;
+            let viewMaxX = maxRx;
+            let viewMinY = minRy;
+            let viewMaxY = maxRy;
+
+            let blockFound = false;
+            let bMinX = Infinity, bMaxX = -Infinity, bMinY = Infinity, bMaxY = -Infinity;
+
+            if (appState.zoomTarget !== 'ALL') {
+                for (const slot of customSlots) {
+                    if (slot.block === appState.zoomTarget) {
+                        blockFound = true;
+                        bMinX = Math.min(bMinX, slot.cx);
+                        bMaxX = Math.max(bMaxX, slot.cx + slot.w);
+                        bMinY = Math.min(bMinY, slot.cy);
+                        bMaxY = Math.max(bMaxY, slot.cy + slot.h);
+                    }
+                }
+                if (blockFound) {
+                    viewMinX = bMinX;
+                    viewMaxX = bMaxX;
+                    viewMinY = bMinY;
+                    viewMaxY = bMaxY;
+                }
+            }
+
+            const padding = Math.max((viewMaxX - viewMinX) * 0.1, (viewMaxY - viewMinY) * 0.1, 4);
+            viewMinX -= padding;
+            viewMaxX += padding;
+            viewMinY -= padding;
+            viewMaxY += padding;
+
+            const viewWidth = viewMaxX - viewMinX;
+            const viewHeight = viewMaxY - viewMinY;
+            const aspectRatio = viewHeight / viewWidth;
+
+            const targetWidth = 1200;
+            const targetHeight = Math.round(targetWidth * aspectRatio);
+
+            if (gridCanvas.width !== targetWidth || gridCanvas.height !== targetHeight) {
+                gridCanvas.width = targetWidth;
+                gridCanvas.height = targetHeight;
+            }
+
+            const scale = gridCanvas.width / viewWidth;
+            const mapX = (x) => (x - viewMinX) * scale;
+            const mapY = (y) => (viewMaxY - y) * scale;
+
+            ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+
+            ctx.save();
+            if (appState.zoomTarget !== 'ALL' && blockFound) {
+                ctx.beginPath();
+                ctx.rect(mapX(bMinX), mapY(bMaxY), mapX(bMaxX) - mapX(bMinX), mapY(bMinY) - mapY(bMaxY));
+                ctx.clip();
+            }
+
+            // Draw Boundary Polygon
+            ctx.beginPath();
+            ctx.moveTo(mapX(polygon[0].x), mapY(polygon[0].y));
+            for (let i = 1; i < polygon.length; i++) ctx.lineTo(mapX(polygon[i].x), mapY(polygon[i].y));
+            ctx.closePath();
+            ctx.fillStyle = "rgba(234, 179, 8, 0.16)"; ctx.fill();
+            ctx.lineWidth = 4; ctx.strokeStyle = "#eab308"; ctx.stroke();
 
             let targetRotatedX = null, targetRotatedY = null;
             if (appState.gpsData && appState.gpsData.easting && appState.gpsData.northing) {
@@ -1691,11 +1708,23 @@
                 ctx.fillText("ROVER 📍", px, py - pulseR - 4);
             }
 
-            if (autoDetectedSlot) {
-                document.getElementById('gps-val-slot').textContent = "SLOT " + autoDetectedSlot;
+            let finalLabel = autoDetectedSlot;
+            if (!autoDetectedSlot && targetRotatedX !== null && targetRotatedY !== null) {
+                const isInside = pointInPolygon({x: targetRotatedX, y: targetRotatedY}, polygon);
+                if (isInside) {
+                    finalLabel = "No Container";
+                } else {
+                    finalLabel = "Out of Bounds";
+                }
+            }
+
+            if (finalLabel) {
+                const displayText = (finalLabel === "No Container" || finalLabel === "Out of Bounds") ? finalLabel : "SLOT " + finalLabel;
+                document.getElementById('gps-val-slot').textContent = displayText;
+                
                 // Hanya perbarui gpsData.detected_slot jika tahap 3 belum dikonfirmasi
                 if (appState.gpsData && !appState.confirmedSlot) {
-                    appState.gpsData.detected_slot = "SLOT " + autoDetectedSlot;
+                    appState.gpsData.detected_slot = displayText;
                 }
             }
             ctx.restore();
