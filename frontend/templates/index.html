@@ -1828,9 +1828,22 @@
             updateStepUI();
 
             if (stepNum === 3) {
+                appState.confirmedSlot = null; // Buka kunci slot untuk update real-time
                 refreshGPSData();
                 drawDepoGrid();
             } else if (stepNum === 4) {
+                // Kunci slot saat ini (dari tampilan canvas)
+                if (!appState.confirmedSlot) {
+                    const canvasSlotText = document.getElementById('gps-val-slot').textContent;
+                    if (canvasSlotText && canvasSlotText !== '-') {
+                        appState.confirmedSlot = canvasSlotText;
+                    } else if (appState.gpsData && appState.gpsData.detected_slot) {
+                        appState.confirmedSlot = appState.gpsData.detected_slot;
+                    }
+                    if (appState.gpsData) {
+                        appState.gpsData.detected_slot = appState.confirmedSlot;
+                    }
+                }
                 renderSummaryCard();
             } else if (stepNum === 5) {
                 loadHistoryLogs();
@@ -2095,10 +2108,6 @@
                     appState.gpsData = data;
                     updateGPSDisplay(data);
                     appState.completedSteps.add(3);
-                    // Kunci slot saat ini agar tidak berubah di tahap berikutnya
-                    appState.confirmedSlot = (appState.gpsData && appState.gpsData.detected_slot)
-                        ? appState.gpsData.detected_slot
-                        : null;
                     updateStepUI();
                     showToast('Koordinat GPS berhasil diperbarui!', 'success');
                 }
